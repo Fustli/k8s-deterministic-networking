@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speedtest-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: speedtest-server
+  template:
+    metadata:
+      labels:
+        app: speedtest-server
+    spec:
+      containers:
+      - name: server
+        image: networkstatic/iperf3
+        args: ['-s']
+        ports:
+        - containerPort: 5201
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: speedtest-server-service
+spec:
+  selector:
+    app: speedtest-server
+  ports:
+    - protocol: TCP
+      port: 5201
+      targetPort: 5201
+  type: ClusterIP

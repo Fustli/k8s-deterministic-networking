@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: speedtest-client-same-node
+spec:
+  template:
+    spec:
+      containers:
+      - name: client
+        image: networkstatic/iperf3
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            echo "=== SAME-NODE TESZT ==="
+            echo "Szerver: speedtest-server-service"
+            
+            echo "=== TCP Baseline ==="
+            iperf3 -c speedtest-server-service -t 10 -O 2 -i 0
+            
+            echo "=== UDP Jitter Teszt ==="  
+            iperf3 -c speedtest-server-service -u -b 100M -t 10 -O 2 -i 0
+            
+            echo "=== Same-node teszt kész ==="
+      restartPolicy: Never
+  backoffLimit: 1
