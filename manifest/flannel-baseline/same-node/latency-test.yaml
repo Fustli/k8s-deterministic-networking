@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: same-node-latency-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: client
+        image: nicolaka/netshoot
+        command: ["ping", "-c", "100", "speedtest-server-service"]
+      restartPolicy: Never
+  backoffLimit: 1
+
