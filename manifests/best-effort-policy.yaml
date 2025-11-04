@@ -1,0 +1,16 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: best-effort-bw-limit # This policy acts as a selector only now
+spec:
+  # Select ALL best-effort pods
+  endpointSelector:
+    matchLabels:
+      priority: best-effort
+  egress:
+  - toEndpoints:
+    - matchLabels: {} # Match all endpoints (i.e., "to anywhere")
+    toPorts: # Explicitly allow the best-effort traffic
+    - ports:
+      - port: "80"
+        protocol: TCP

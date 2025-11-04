@@ -1,0 +1,18 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: robot-control-allow-critical
+spec:
+  # Select the robot control pod
+  endpointSelector:
+    matchLabels:
+      app: robot-control
+  # Allow all egress (outbound) traffic for this critical pod.
+  # This ensures it is not accidentally blocked and remains highly prioritized.
+  egress:
+  - toEndpoints:
+    - matchLabels: {}
+    toPorts:
+    - ports:
+      - port: "5201"
+        protocol: UDP

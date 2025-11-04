@@ -1,0 +1,149 @@
+# --- CRITICAL APPLICATIONS ---
+
+# 1. Robot Control (Low-latency, low-bw UDP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: robot-control-svc
+spec:
+  selector:
+    app: robot-control
+  ports:
+    - name: udp
+      protocol: UDP
+      port: 5201
+      targetPort: 5201
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-control-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot-control
+  template:
+    metadata:
+      labels:
+        app: robot-control
+        priority: critical # Label for our deterministic policy
+    spec:
+      containers:
+      - name: iperf3-server
+        image: networkstatic/iperf3 # <-- FIXED IMAGE
+        args: ["-s", "-p", "5201"] # -s = server, -p = port
+        ports:
+        - containerPort: 5201
+          protocol: UDP
+
+---
+# 2. Safety Scanner (High-bw, stable TCP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: safety-scanner-svc
+spec:
+  selector:
+    app: safety-scanner
+  ports:
+    - name: tcp
+      protocol: TCP
+      port: 5202
+      targetPort: 5202
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: safety-scanner-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: safety-scanner
+  template:
+    metadata:
+      labels:
+        app: safety-scanner
+        priority: critical # Label for our deterministic policy
+    spec:
+      containers:
+      - name: iperf3-server
+        image: networkstatic/iperf3 # <-- FIXED IMAGE
+        args: ["-s", "-p", "5202"] # -s = server, -p = port
+        ports:
+        - containerPort: 5202
+          protocol: TCP
+
+# --- BEST-EFFORT APPLICATIONS ---
+
+# 3. ERP Dashboard (Standard HTTPS traffic)
+apiVersion: v1
+kind: Service
+metadata:
+  name: erp-dashboard-svc
+spec:
+  selector:
+    app: erp-dashboard
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erp-dashboard-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: erp-dashboard
+  template:
+    metadata:
+      labels:
+        app: erp-dashboard
+        priority: best-effort # Label for our ML-optimized policy
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+---
+# 4. Telemetry Upload (Large file uploads)
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemetry-upload-svc
+spec:
+  selector:
+    app: telemetry-upload
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-upload-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetry-upload
+  template:
+    metadata:
+      labels:
+        app: telemetry-upload
+        priority: best-effort # Label for our ML-optimized policy
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+

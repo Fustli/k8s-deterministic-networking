@@ -1,0 +1,18 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: safety-scanner-allow-critical # Renamed to reflect its purpose: allowing critical traffic
+spec:
+  # Select the safety scanner pod
+  endpointSelector:
+    matchLabels:
+      app: safety-scanner
+  # Allow egress (outbound) TCP traffic on the defined port.
+  # This makes the traffic high-priority in the BPF queueing system.
+  egress:
+  - toEndpoints:
+    - matchLabels: {} # Match all endpoints (i.e., "to anywhere")
+    toPorts:
+    - ports:
+      - port: "5202" # Port for Safety Scanner
+        protocol: TCP
