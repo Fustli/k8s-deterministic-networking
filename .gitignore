@@ -239,3 +239,7 @@ debug_logs/
 *.scratch.py
 local_credentials.txt
 
+# Local documentation (for learning, not for GitHub)
+LEARNING_GUIDE.md
+CLEANUP_SUMMARY.md
+
