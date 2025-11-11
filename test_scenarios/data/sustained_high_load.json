@@ -1,0 +1,367 @@
+{
+  "scenario": "sustained_high_load",
+  "duration_seconds": 300,
+  "samples": 60,
+  "data": [
+    {
+      "timestamp_sec": 0,
+      "jitter_ms": 0.3,
+      "bandwidth_mbps": 110,
+      "decision": "PATCH"
+    },
+    {
+      "timestamp_sec": 5,
+      "jitter_ms": 0.45,
+      "bandwidth_mbps": 120,
+      "decision": "PATCH"
+    },
+    {
+      "timestamp_sec": 10,
+      "jitter_ms": 0.6,
+      "bandwidth_mbps": 130,
+      "decision": "PATCH"
+    },
+    {
+      "timestamp_sec": 15,
+      "jitter_ms": 0.75,
+      "bandwidth_mbps": 140,
+      "decision": "PATCH"
+    },
+    {
+      "timestamp_sec": 20,
+      "jitter_ms": 0.9,
+      "bandwidth_mbps": 150,
+      "decision": "PATCH"
+    },
+    {
+      "timestamp_sec": 25,
+      "jitter_ms": 1.05,
+      "bandwidth_mbps": 100,
+      "decision": "PATCH"
+    },
+    {
+      "timestamp_sec": 30,
+      "jitter_ms": 1.2,
+      "bandwidth_mbps": 50,
+      "decision": "PATCH"
+    },
+    {
+      "timestamp_sec": 35,
+      "jitter_ms": 1.35,
+      "bandwidth_mbps": 10,
+      "decision": "PATCH"
+    },
+    {
+      "timestamp_sec": 40,
+      "jitter_ms": 1.5,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 45,
+      "jitter_ms": 1.65,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 50,
+      "jitter_ms": 1.8,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 55,
+      "jitter_ms": 1.95,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 60,
+      "jitter_ms": 2.1,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 65,
+      "jitter_ms": 2.25,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 70,
+      "jitter_ms": 2.4,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 75,
+      "jitter_ms": 2.55,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 80,
+      "jitter_ms": 2.7,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 85,
+      "jitter_ms": 2.85,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 90,
+      "jitter_ms": 3.0,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 95,
+      "jitter_ms": 3.15,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 100,
+      "jitter_ms": 3.3,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 105,
+      "jitter_ms": 3.45,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 110,
+      "jitter_ms": 3.6,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 115,
+      "jitter_ms": 3.75,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 120,
+      "jitter_ms": 3.9,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 125,
+      "jitter_ms": 4.05,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 130,
+      "jitter_ms": 4.2,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 135,
+      "jitter_ms": 4.35,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 140,
+      "jitter_ms": 4.5,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 145,
+      "jitter_ms": 4.65,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 150,
+      "jitter_ms": 4.8,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 155,
+      "jitter_ms": 4.9,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 160,
+      "jitter_ms": 5.0,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 165,
+      "jitter_ms": 5.1,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 170,
+      "jitter_ms": 5.2,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 175,
+      "jitter_ms": 5.3,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 180,
+      "jitter_ms": 5.4,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 185,
+      "jitter_ms": 5.5,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 190,
+      "jitter_ms": 5.6,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 195,
+      "jitter_ms": 5.7,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 200,
+      "jitter_ms": 4.8,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 205,
+      "jitter_ms": 4.9,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 210,
+      "jitter_ms": 5.0,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 215,
+      "jitter_ms": 5.1,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 220,
+      "jitter_ms": 5.2,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 225,
+      "jitter_ms": 5.3,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 230,
+      "jitter_ms": 5.4,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 235,
+      "jitter_ms": 5.5,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 240,
+      "jitter_ms": 5.6,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 245,
+      "jitter_ms": 5.7,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 250,
+      "jitter_ms": 4.8,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 255,
+      "jitter_ms": 4.9,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 260,
+      "jitter_ms": 5.0,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 265,
+      "jitter_ms": 5.1,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 270,
+      "jitter_ms": 5.2,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 275,
+      "jitter_ms": 5.3,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 280,
+      "jitter_ms": 5.4,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 285,
+      "jitter_ms": 5.5,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 290,
+      "jitter_ms": 5.6,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    },
+    {
+      "timestamp_sec": 295,
+      "jitter_ms": 5.7,
+      "bandwidth_mbps": 10,
+      "decision": "NO_UPDATE"
+    }
+  ]
+}

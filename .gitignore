@@ -205,3 +205,27 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Kubernetes
+# Sensitive configuration files
+*.key
+*.cert
+*.pem
+kubeconfig
+kubeconfig.yaml
+secrets.yaml
+secret.yaml
+*-secret.yaml
+
+# Docker
+# Build artifacts
+docker/*/build/
+docker/*/*.tar
+docker/*/*.tar.gz
+docker/*/dist/
+
+# Local configuration
+.kubeconfig
+.env.local
+.env.*.local
+

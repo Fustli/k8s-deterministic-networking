@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-upload-deployment
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        kubernetes.io/ingress-bandwidth: "100M"  # Default starting bandwidth
+        kubernetes.io/egress-bandwidth: "100M"   # Will be adjusted by ML controller
+      labels:
+        app: telemetry-upload
+        priority: best-effort
+    spec:
+      containers:
+      - name: telemetry-uploader
+        # ... rest of container spec ...

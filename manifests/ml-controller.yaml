@@ -46,11 +46,11 @@ spec:
       serviceAccountName: ml-controller-sa
       containers:
       - name: controller
-        image: python:3.9-slim
+        image: python:3.11-slim
         command: ["/bin/sh", "-c"]
         args:
         - |
-          pip install kubernetes requests
+          pip install --no-cache-dir kubernetes prometheus-api-client
           python /app/ml_controller.py
         volumeMounts:
         - name: script-volume

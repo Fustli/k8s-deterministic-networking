@@ -9,10 +9,10 @@ spec:
   selector:
     app: robot-control
   ports:
-    - name: udp
-      protocol: UDP
-      port: 5201
-      targetPort: 5201
+  - name: udp
+    protocol: UDP
+    port: 5201
+    targetPort: 5201
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -28,10 +28,10 @@ spec:
       labels:
         app: robot-control
         priority: critical # Label for our deterministic policy
-    spec:
+    spec: # <-- JAVÍTOTT BEHÚZÁS
       containers:
       - name: iperf3-server
-        image: networkstatic/iperf3 # <-- FIXED IMAGE
+        image: networkstatic/iperf3
         args: ["-s", "-p", "5201"] # -s = server, -p = port
         ports:
         - containerPort: 5201
@@ -47,10 +47,10 @@ spec:
   selector:
     app: safety-scanner
   ports:
-    - name: tcp
-      protocol: TCP
-      port: 5202
-      targetPort: 5202
+  - name: tcp
+    protocol: TCP
+    port: 5202
+    targetPort: 5202
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -66,15 +66,16 @@ spec:
       labels:
         app: safety-scanner
         priority: critical # Label for our deterministic policy
-    spec:
+    spec: # <-- JAVÍTOTT BEHÚZÁS
       containers:
       - name: iperf3-server
-        image: networkstatic/iperf3 # <-- FIXED IMAGE
+        image: networkstatic/iperf3
         args: ["-s", "-p", "5202"] # -s = server, -p = port
         ports:
         - containerPort: 5202
           protocol: TCP
 
+---
 # --- BEST-EFFORT APPLICATIONS ---
 
 # 3. ERP Dashboard (Standard HTTPS traffic)
@@ -86,9 +87,9 @@ spec:
   selector:
     app: erp-dashboard
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
+  - protocol: TCP
+    port: 80
+    targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -104,7 +105,7 @@ spec:
       labels:
         app: erp-dashboard
         priority: best-effort # Label for our ML-optimized policy
-    spec:
+    spec: # <-- JAVÍTOTT BEHÚZÁS
       containers:
       - name: nginx
         image: nginx:latest
@@ -112,7 +113,7 @@ spec:
         - containerPort: 80
 
 ---
-# 4. Telemetry Upload (Large file uploads)
+# 4. Telemetry Upload (Large file uploads / NOISE SOURCE)
 apiVersion: v1
 kind: Service
 metadata:
@@ -121,9 +122,9 @@ spec:
   selector:
     app: telemetry-upload
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
+  - protocol: TCP
+    port: 80
+    targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -139,11 +140,15 @@ spec:
       labels:
         app: telemetry-upload
         priority: best-effort # Label for our ML-optimized policy
-    spec:
+    spec: # <-- JAVÍTOTT BEHÚZÁS
       containers:
-      - name: nginx
-        image: nginx:latest
+      - name: telemetry-upload-iperf-server
+        # *** JAVÍTVA: nginx -> networkstatic/iperf3 ***
+        image: networkstatic/iperf3
+        args:
+          - "-s" # Szerver mód
+          - "-p"
+          - "80" # A 80-as porton fut az iperf3 szerver
         ports:
         - containerPort: 80
-
-
+          protocol: TCP
