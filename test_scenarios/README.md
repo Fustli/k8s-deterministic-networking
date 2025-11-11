@@ -340,7 +340,7 @@ python3 -m json.tool data/*.json  # Validate JSON
 
 ## 📄 License
 
-Part of the k3s-deterministic-networking project.
+Part of the k8s-deterministic-networking project.
 
 ---
 

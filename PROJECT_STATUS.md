@@ -652,14 +652,14 @@ readinessProbe:
 ## 7. Repository Structure
 
 ```
-/home/ubuntu/k3s-deterministic-networking/
+/home/ubuntu/k8s-deterministic-networking/
 ├── LICENSE                                    # Project license
 ├── PROJECT_STATUS.md                          # This file
 ├── docs/
 │   └── README.md                              # High-level overview
 ├── cluster-setup/
 │   ├── current-cluster-info.md                # Cluster configuration snapshot
-│   └── k3s-install-notes.md                   # Historical K3s setup notes
+│   └── k8s-install-notes.md                   # Historical K3s setup notes
 ├── manifests/
 │   ├── ml-controller.yaml                     # ✅ ML controller deployment
 │   ├── ml_controller_rbac.yaml                # ✅ RBAC for kube-system access
@@ -952,7 +952,7 @@ Total cluster overhead: ~2% CPU, 1% memory (3-node cluster)
 ## 14. Contact & Support
 
 **Project Owner:** [Your Team]  
-**Repository:** /home/ubuntu/k3s-deterministic-networking  
+**Repository:** /home/ubuntu/k8s-deterministic-networking  
 **Last Updated:** November 11, 2024  
 **Status:** ✅ Functional, Test Framework Complete, Production Hardening Pending
 

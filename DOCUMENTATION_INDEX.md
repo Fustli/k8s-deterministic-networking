@@ -30,7 +30,7 @@ Welcome! This is your complete guide to the ML-driven network controller project
 ## 🗂️ Directory Structure
 
 ```
-/home/ubuntu/k3s-deterministic-networking/
+/home/ubuntu/k8s-deterministic-networking/
 │
 ├── 📄 PROJECT_STATUS.md              ← Read this first for complete overview
 ├── 📄 QUICK_REFERENCE.md             ← Daily operations commands
@@ -41,7 +41,7 @@ Welcome! This is your complete guide to the ML-driven network controller project
 │
 ├── 📁 cluster-setup/
 │   ├── current-cluster-info.md        Kubernetes cluster configuration
-│   └── k3s-install-notes.md          Historical setup notes
+│   └── k8s-install-notes.md          Historical setup notes
 │
 ├── 📁 manifests/                      All Kubernetes YAML files
 │   ├── ml-controller.yaml             ✅ ML controller deployment

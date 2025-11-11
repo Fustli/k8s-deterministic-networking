@@ -1,4 +1,4 @@
-# K3s Deterministic Networking: ML-Driven QoS Controller
+# K8s Deterministic Networking: ML-Driven QoS Controller
 
 Research and implementation of deterministic networking in Kubernetes, combining machine learning-driven bandwidth management with Cilium CNI for guaranteed QoS on critical applications.
 
@@ -50,7 +50,7 @@ Cilium policies ensuring:
 ## Project Structure
 
 ```
-k3s-deterministic-networking/
+k8s-deterministic-networking/
 ├── docs/                          # Project documentation
 ├── manifests/                     # Kubernetes deployments
 │   ├── ml-controller.yaml        # ML bandwidth controller
