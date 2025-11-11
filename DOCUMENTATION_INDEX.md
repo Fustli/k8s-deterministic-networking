@@ -1,4 +1,4 @@
-# K3s Deterministic Networking - Documentation Index
+# K8s Deterministic Networking - Documentation Index
 
 Welcome! This is your complete guide to the ML-driven network controller project.
 
@@ -320,7 +320,7 @@ kubectl get all -n kube-system | grep -E "(cilium|ml-controller)"
 
 ---
 
-**Last Updated:** November 11, 2024  
+**Last Updated:** November 11, 2025  
 **Version:** 1.0  
 **Status:** ✅ Project Functional, Test Framework Complete
 
