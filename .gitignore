@@ -229,3 +229,13 @@ docker/*/dist/
 .env.local
 .env.*.local
 
+# Personal use only - Local testing and development
+personal/
+personal_notes.md
+*.local.yaml
+test_cluster_info.txt
+debug_logs/
+.tmp/
+*.scratch.py
+local_credentials.txt
+
