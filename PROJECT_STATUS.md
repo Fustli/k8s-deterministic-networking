@@ -168,7 +168,7 @@ DECISION_TREE:
 
 ### 2.3 Deployment Configuration
 
-**File:** `manifests/ml-controller.yaml`
+**File:** `manifests/apps/ml-controller.yaml`
 - **Namespace:** kube-system (privileged access)
 - **Replicas:** 1 (primary controller, no HA yet)
 - **Image:** python:3.11-slim
@@ -176,7 +176,7 @@ DECISION_TREE:
 - **Resource Limits:** 512Mi RAM, 500m CPU (tight for production)
 - **Probes:** No liveness/readiness (⚠️ improvement needed)
 
-**File:** `manifests/ml_controller_rbac.yaml`
+**File:** `manifests/apps/ml_controller_rbac.yaml`
 - **Permissions:** 
   - `deployments.get/list/patch` (default namespace)
   - `pods.get/list` (all namespaces)
@@ -222,9 +222,9 @@ Bandwidth unchanged: 820M
 | best-effort-policy | telemetry + dashboard | TCP | 80 | Allow ingress/egress to any | VALID ✅ |
 
 **File Locations:**
-- `manifests/robot-control-policy.yaml`
-- `manifests/safety-scanner-policy.yaml`
-- `manifests/best-effort-policy.yaml`
+- `manifests/policies/robot-control-policy.yaml`
+- `manifests/policies/safety-scanner-policy.yaml`
+- `manifests/policies/best-effort-policy.yaml`
 
 ### 3.2 Policy Enforcement Verification
 
@@ -704,15 +704,17 @@ KEY FILES STATUS:
 ### 8.1 Deployment (Already Completed)
 
 ```bash
+```bash
 # 1. Deploy ML controller to kube-system
-kubectl apply -f manifests/ml_controller_rbac.yaml
-kubectl apply -f manifests/ml-controller-configmap.yaml
-kubectl apply -f manifests/ml-controller.yaml
+kubectl apply -f manifests/apps/ml_controller_rbac.yaml
+kubectl apply -f manifests/apps/ml-controller-configmap.yaml
+kubectl apply -f manifests/apps/ml-controller.yaml
 
 # 2. Deploy network policies
-kubectl apply -f manifests/robot-control-policy.yaml
-kubectl apply -f manifests/safety-scanner-policy.yaml
-kubectl apply -f manifests/best-effort-policy.yaml
+kubectl apply -f manifests/policies/robot-control-policy.yaml
+kubectl apply -f manifests/policies/safety-scanner-policy.yaml
+kubectl apply -f manifests/policies/best-effort-policy.yaml
+```
 
 # 3. Verify deployment
 kubectl get deployment -n kube-system ml-controller
@@ -942,9 +944,9 @@ Total cluster overhead: ~2% CPU, 1% memory (3-node cluster)
 
 ### Project Files
 - Main controller: `scripts/ml_controller.py` (430 lines, OOP, type-hinted)
-- Deployment YAML: `manifests/ml-controller.yaml`
-- RBAC: `manifests/ml_controller_rbac.yaml`
-- Policies: `manifests/*-policy.yaml` (3 files)
+- Deployment YAML: `manifests/apps/ml-controller.yaml`
+- RBAC: `manifests/apps/ml_controller_rbac.yaml`
+- Policies: `manifests/policies/` (3 CiliumNetworkPolicy files)
 - Test framework: `test_scenarios/` (5 Python modules + README)
 
 ---

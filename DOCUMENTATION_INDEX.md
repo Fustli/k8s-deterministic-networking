@@ -37,21 +37,27 @@ Welcome! This is your complete guide to the ML-driven network controller project
 ├── 📄 DOCUMENTATION_INDEX.md          ← This file
 │
 ├── 📁 docs/
-│   └── README.md                      High-level project description
+│   ├── README.md                      High-level project description
+│   ├── CONTAINERD_BUILD.md            containerd setup notes
+│   └── TEST_RESULTS.md                Legacy test results reference
 │
 ├── 📁 cluster-setup/
 │   ├── current-cluster-info.md        Kubernetes cluster configuration
 │   └── k8s-install-notes.md          Historical setup notes
 │
 ├── 📁 manifests/                      All Kubernetes YAML files
-│   ├── ml-controller.yaml             ✅ ML controller deployment
-│   ├── ml_controller_rbac.yaml        ✅ RBAC for kube-system
-│   ├── ml-controller-configmap.yaml   ConfigMap with scripts
-│   ├── robot-control-policy.yaml      ✅ Cilium policy (UDP:5201)
-│   ├── safety-scanner-policy.yaml     ✅ Cilium policy (TCP:5202)
-│   ├── best-effort-policy.yaml        ✅ Cilium policy (TCP:80)
-│   ├── speedtest-server.yaml          Network test utilities
-│   └── flannel-baseline/              [Deprecated: Flannel tests]
+│   ├── policies/                      Cilium network policies
+│   │   ├── robot-control-policy.yaml  ✅ UDP:5201 QoS protection
+│   │   ├── safety-scanner-policy.yaml ✅ TCP:5202 QoS protection
+│   │   └── best-effort-policy.yaml    ✅ TCP:80 bandwidth management
+│   ├── apps/                          Deployment & app configs
+│   │   ├── ml-controller.yaml         ✅ ML controller deployment
+│   │   ├── ml_controller_rbac.yaml    ✅ RBAC for kube-system
+│   │   ├── ml-controller-configmap.yaml ConfigMap with scripts
+│   │   ├── robot-factory-application.yaml ✅ Test application
+│   │   └── speedtest-server.yaml      Network test utilities
+│   └── examples/                      Reference & example files
+│       └── bandwidth-annotations-example.yaml Annotation reference
 │
 ├── 📁 scripts/
 │   ├── ml_controller.py               ✅ Main ML controller (OOP)
@@ -62,15 +68,22 @@ Welcome! This is your complete guide to the ML-driven network controller project
 │       ├── Dockerfile                 ✅ Python 3.11-slim build
 │       └── requirements.txt           Dependencies (kubernetes, prometheus-api-client)
 │
-├── 📁 test_scenarios/                 ✅ NEW: Complete test framework
+├── 📁 test_scenarios/                 ✅ Complete test framework
 │   ├── README.md                      Comprehensive test guide
 │   ├── scenario_generator.py          6 scenario generators
 │   ├── test_runner.py                 Full pipeline orchestrator
 │   ├── visualizer.py                  Markdown report generator
 │   ├── visual_summary.py              ASCII art visualizer
-│   ├── results/                       7 markdown reports (generated)
-│   ├── data/                          12 CSV/JSON files (generated)
-│   └── scenarios/                     [Reserved for future]
+│   ├── results/                       Generated reports (7 markdown)
+│   └── data/                          Generated CSV/JSON files
+
+├── 📁 monitoring/                     [NEW] Prometheus & Hubble setup
+│   ├── prometheus-deployment.yaml     (Pending implementation)
+│   └── hubble-metrics.yaml            (Pending implementation)
+
+├── 📁 output/                         [NEW] Generated test outputs
+│   ├── results/                       Test result summaries
+│   └── data/                          Raw test data files
 │
 ├── 📁 tests/
 │   ├── baseline-tests.sh              Test execution scripts
@@ -127,10 +140,11 @@ kubectl get deployment telemetry-upload-deployment -o jsonpath='{.spec.template.
 | Feature | Status | Location |
 |---------|--------|----------|
 | **ML Controller** | ✅ Deployed & Running | `scripts/ml_controller.py` |
-| **QoS via Cilium** | ✅ Active | `manifests/*-policy.yaml` |
-| **Bandwidth Control** | ✅ Patching | `ml_controller.yaml` |
+| **QoS via Cilium** | ✅ Active | `manifests/policies/` |
+| **Bandwidth Control** | ✅ Patching | `manifests/apps/ml-controller.yaml` |
 | **Test Framework** | ✅ Complete | `test_scenarios/` |
-| **Prometheus Metrics** | ⚠️ Fallback (0.50ms) | Check Prometheus setup |
+| **Prometheus Metrics** | ⚠️ Pending Setup | `monitoring/` (NEW) |
+| **Hubble Metrics** | ⚠️ Pending Setup | `monitoring/` (NEW) |
 | **HA Deployment** | ⏳ Pending | Scale to 2+ replicas |
 | **Production Hardening** | ⏳ Pending | See PROJECT_STATUS.md §5.2 |
 
