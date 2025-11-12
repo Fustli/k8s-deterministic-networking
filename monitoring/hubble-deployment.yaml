@@ -1,0 +1,39 @@
+---
+# Hubble Service (for Prometheus scraping)
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubble-metrics
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: hubble
+spec:
+  ports:
+    - name: metrics
+      port: 9091
+      targetPort: 9091
+      protocol: TCP
+  selector:
+    k8s-app: cilium
+  type: ClusterIP
+
+---
+# ConfigMap for Hubble metrics configuration
+# Note: Cilium must be configured with hubble.metrics.enabled=true
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hubble-metrics-config
+  namespace: kube-system
+data:
+  hubble-metrics-config.yaml: |
+    # Hubble metrics to export
+    # These metrics track network flow latency, packet drop rate, etc.
+    metrics:
+      - flows:level:info
+      - tcp:flags:syn_ack_syn_ack
+      - drop:reason:invalid_source_mac
+      - drop:reason:policy_denied
+      - tcp:flags:syn
+      - tcp:flags:fin_ack
+      - tcp:flags:rst

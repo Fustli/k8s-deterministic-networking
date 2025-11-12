@@ -52,6 +52,9 @@ spec:
         - |
           pip install --no-cache-dir kubernetes prometheus-api-client
           python /app/ml_controller.py
+        env:
+        - name: PROMETHEUS_URL
+          value: "http://prometheus.monitoring.svc.cluster.local:9090"
         volumeMounts:
         - name: script-volume
           mountPath: /app

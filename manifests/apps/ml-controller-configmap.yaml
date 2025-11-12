@@ -1,146 +1,105 @@
 apiVersion: v1
+data:
+  ml_controller.py: "#!/usr/bin/env python3\n\n\"\"\"\nDeterministic Networking ML
+    Controller for Kubernetes\n\nThis controller implements a feedback control loop
+    that dynamically adjusts network bandwidth\nfor best-effort applications while
+    ensuring QoS guarantees for critical applications.\n\nKey components:\n- Prometheus/Hubble
+    integration for real-time latency monitoring\n- Kubernetes bandwidth control via
+    pod annotations\n- Proportional control algorithm for bandwidth adjustment\n\nAuthor:
+    Fustli\nDate: November 10, 2025\n\"\"\"\n\nimport os\nimport time\nimport logging\nfrom
+    dataclasses import dataclass\nfrom typing import Optional, Tuple\n\nimport kubernetes\nfrom
+    kubernetes import client, config\nfrom prometheus_api_client import PrometheusConnect\n\n#
+    Configure logging\nlogging.basicConfig(\n    level=logging.INFO,\n    format='%(asctime)s
+    - %(levelname)s - %(message)s'\n)\nlogger = logging.getLogger(__name__)\n\n@dataclass\nclass
+    ControlParameters:\n    \"\"\"Configuration parameters for the control loop\"\"\"\n
+    \   TARGET_JITTER_MS: float = 1.0    # Target jitter threshold in milliseconds\n
+    \   MIN_BANDWIDTH_MBPS: int = 10     # Minimum allowed bandwidth\n    MAX_BANDWIDTH_MBPS:
+    int = 1000   # Maximum allowed bandwidth\n    DECREASE_STEP_MBPS: int = 50     #
+    How much to decrease bandwidth when jitter is high\n    INCREASE_STEP_MBPS: int
+    = 10     # How much to increase bandwidth when jitter is low\n    UPDATE_THRESHOLD_MBPS:
+    int = 5   # Minimum bandwidth change to trigger an update\n    CONTROL_INTERVAL_SEC:
+    int = 5    # How often to run the control loop\n\n@dataclass\nclass KubernetesConfig:\n
+    \   \"\"\"Kubernetes-related configuration\"\"\"\n    DEPLOYMENT_NAME: str = \"telemetry-upload-deployment\"\n
+    \   NAMESPACE: str = \"default\"\n    BANDWIDTH_ANNOTATION: str = \"kubernetes.io/egress-bandwidth\"\n\nclass
+    PrometheusMetrics:\n    \"\"\"Handles all Prometheus/Hubble metric queries and
+    processing\"\"\"\n    \n    def __init__(self, prometheus_url: str):\n        \"\"\"Initialize
+    Prometheus client connection\"\"\"\n        self.prom = PrometheusConnect(url=prometheus_url,
+    disable_ssl=True)\n        \n    def get_critical_app_latency(self) -> float:\n
+    \       \"\"\"\n        Query Prometheus/Hubble for UDP jitter metrics of the
+    robot-control application.\n        \n        Returns:\n            float: 95th
+    percentile jitter in milliseconds\n            \n        Note:\n            Returns
+    a default value of 0.5ms if the query fails, allowing the\n            system
+    to continue operating with a conservative estimate.\n        \"\"\"\n        try:\n
+    \           # PromQL query for Hubble metrics\n            # Query jitter (latency)
+    of critical traffic from robot-control pods\n            query = \"\"\"histogram_quantile(0.95,
+    sum(rate(hubble_flow_latency_seconds_bucket{source_pod=~\"robot-control.*\",protocol=\"UDP\"}[5m]))
+    by (le)) * 1000\"\"\"\n            \n            # Use the Prometheus client attached
+    to this instance\n            result = self.prom.custom_query(query)\n\n            if
+    result and len(result) > 0:\n                # Result is already in milliseconds
+    (we multiplied by 1000 in the query)\n                latency_ms = float(result[0]['value'][1])\n
+    \               return latency_ms\n\n            logger.warning(\"No data returned
+    from Prometheus query\")\n            return 0.5\n\n        except Exception as
+    e:\n            logger.error(f\"Failed to query Prometheus: {e}\")\n            return
+    0.5\n\nclass BandwidthController:\n    \"\"\"\n    Main controller class implementing
+    the bandwidth control loop.\n    Uses a proportional control algorithm to adjust
+    bandwidth based on observed jitter.\n    \"\"\"\n    \n    def __init__(self):\n
+    \       \"\"\"Initialize the controller with necessary clients and configurations\"\"\"\n
+    \       # Load Kubernetes configuration\n        try:\n            config.load_incluster_config()
+    \ # Running inside cluster\n        except config.ConfigException:\n            config.load_kube_config()
+    \      # Running locally\n            \n        # Initialize clients and configurations\n
+    \       self.k8s_client = client.AppsV1Api()\n        self.metrics = PrometheusMetrics(\n
+    \           os.getenv('PROMETHEUS_URL', 'http://prometheus-server:9090')\n        )\n
+    \       self.control_params = ControlParameters()\n        self.k8s_config = KubernetesConfig()\n
+    \       \n        # Initialize controller state\n        self.current_bandwidth
+    = 100  # Starting bandwidth in Mbps\n        \n    def adjust_bandwidth(self,
+    current_jitter: float) -> int:\n        \"\"\"\n        Calculate new bandwidth
+    based on observed jitter using proportional control.\n        \n        Args:\n
+    \           current_jitter: Measured jitter in milliseconds\n            \n        Returns:\n
+    \           int: New bandwidth value in Mbps\n        \"\"\"\n        if current_jitter
+    > self.control_params.TARGET_JITTER_MS:\n            # Reduce bandwidth when jitter
+    exceeds target\n            new_bandwidth = self.current_bandwidth - self.control_params.DECREASE_STEP_MBPS\n
+    \       else:\n            # Gradually increase bandwidth when jitter is under
+    control\n            new_bandwidth = self.current_bandwidth + self.control_params.INCREASE_STEP_MBPS\n
+    \           \n        # Ensure bandwidth stays within defined bounds\n        return
+    max(\n            self.control_params.MIN_BANDWIDTH_MBPS,\n            min(new_bandwidth,
+    self.control_params.MAX_BANDWIDTH_MBPS)\n        )\n\n    def update_deployment_bandwidth(self,
+    bandwidth_mbps: int) -> bool:\n        \"\"\"\n        Update the Kubernetes deployment
+    with new bandwidth annotation.\n        \n        Args:\n            bandwidth_mbps:
+    New bandwidth limit in Mbps\n            \n        Returns:\n            bool:
+    True if update was successful, False otherwise\n        \"\"\"\n        try:\n
+    \           # Fetch current deployment\n            deployment = self.k8s_client.read_namespaced_deployment(\n
+    \               name=self.k8s_config.DEPLOYMENT_NAME,\n                namespace=self.k8s_config.NAMESPACE\n
+    \           )\n            \n            # Ensure metadata and annotations exist\n
+    \           if deployment.spec.template.metadata is None:\n                deployment.spec.template.metadata
+    = client.V1ObjectMeta()\n            if deployment.spec.template.metadata.annotations
+    is None:\n                deployment.spec.template.metadata.annotations = {}\n
+    \           \n            # Update bandwidth annotation\n            deployment.spec.template.metadata.annotations[\n
+    \               self.k8s_config.BANDWIDTH_ANNOTATION\n            ] = f\"{bandwidth_mbps}M\"\n
+    \           \n            # Apply the update\n            self.k8s_client.patch_namespaced_deployment(\n
+    \               name=self.k8s_config.DEPLOYMENT_NAME,\n                namespace=self.k8s_config.NAMESPACE,\n
+    \               body=deployment\n            )\n            \n            logger.info(f\"Updated
+    bandwidth limit to {bandwidth_mbps}Mbps\")\n            return True\n            \n
+    \       except Exception as e:\n            logger.error(f\"Failed to update deployment:
+    {e}\")\n            return False\n    \n    def run(self):\n        \"\"\"Main
+    control loop: continuously query metrics and adjust bandwidth.\"\"\"\n        logger.info(\"ML
+    Controller started. Monitoring jitter and adjusting bandwidth...\")\n        try:\n
+    \           while True:\n                # Get current jitter from Prometheus/Hubble\n
+    \               jitter_ms = self.metrics.get_critical_app_latency()\n                logger.info(f\"Current
+    jitter: {jitter_ms:.2f}ms\")\n                \n                # Calculate new
+    bandwidth based on jitter\n                new_bandwidth = self.adjust_bandwidth(jitter_ms)\n
+    \               \n                # Only update if change exceeds threshold\n
+    \               if abs(new_bandwidth - self.current_bandwidth) >= self.control_params.UPDATE_THRESHOLD_MBPS:\n
+    \                   self.update_deployment_bandwidth(new_bandwidth)\n                    self.current_bandwidth
+    = new_bandwidth\n                \n                # Wait before next control
+    iteration\n                time.sleep(self.control_params.CONTROL_INTERVAL_SEC)\n
+    \               \n        except KeyboardInterrupt:\n            logger.info(\"ML
+    Controller stopped by user\")\n        except Exception as e:\n            logger.error(f\"Unexpected
+    error in control loop: {e}\")\n            raise\n\ndef main():\n    \"\"\"Entry
+    point for the controller: instantiate and run the BandwidthController.\"\"\"\n
+    \   controller = BandwidthController()\n    controller.run()\n\n\nif __name__
+    == \"__main__\":\n    main()\n"
 kind: ConfigMap
 metadata:
+  creationTimestamp: null
   name: ml-controller-script
   namespace: kube-system
-data:
-  requirements.txt: |
-    kubernetes
-    prometheus-api-client
-  ml_controller.py: |
-    #!/usr/bin/env python3
-
-    import os
-    import time
-    import kubernetes
-    from kubernetes import client, config
-    from prometheus_api_client import PrometheusConnect
-
-    # Initialize Kubernetes configuration
-    try:
-        config.load_incluster_config()  # We're running inside a pod
-    except config.ConfigException:
-        config.load_kube_config()       # We're running locally
-
-    # Initialize the Kubernetes API client
-    v1_apps = client.AppsV1Api()
-    deployment_name = "telemetry-upload-deployment"
-    namespace = "default"
-
-    # Initialize Prometheus client
-    PROMETHEUS_URL = os.getenv('PROMETHEUS_URL', 'http://prometheus-server:9090')
-    prom = PrometheusConnect(url=PROMETHEUS_URL, disable_ssl=True)
-
-    def get_critical_app_latency():
-        """
-        Query Prometheus/Hubble for the UDP jitter of the robot-control application.
-        Returns the 95th percentile jitter in milliseconds.
-        """
-        try:
-            # PromQL query for Hubble metrics
-            query = """
-            histogram_quantile(0.95, sum(
-                rate(hubble_flow_latency_seconds_bucket{
-                    source_pod=~"robot-control.*",
-                    protocol="UDP"
-                }[1m]
-            ) by (le))
-            """
-            result = prom.custom_query(query)
-            
-            if result and len(result) > 0:
-                # Convert seconds to milliseconds
-                latency_ms = float(result[0]['value'][1]) * 1000
-                return latency_ms
-            else:
-                return 0.5  # Default fallback value
-        except Exception as e:
-            print(f"Error querying Prometheus: {e}")
-            return 0.5  # Default fallback value if query fails
-
-    def adjust_bandwidth(current_jitter):
-        """
-        Implements a simple control loop to adjust bandwidth based on observed jitter.
-        Returns bandwidth limit in Mbps.
-        """
-        TARGET_JITTER = 1.0  # Target jitter threshold in ms
-        MIN_BANDWIDTH = 10   # Minimum bandwidth in Mbps
-        MAX_BANDWIDTH = 1000 # Maximum bandwidth in Mbps
-        
-        # Simple proportional control
-        if current_jitter > TARGET_JITTER:
-            # Reduce bandwidth if jitter is too high
-            return max(MIN_BANDWIDTH, current_bandwidth - 50)
-        else:
-            # Increase bandwidth if jitter is under control
-            return min(MAX_BANDWIDTH, current_bandwidth + 10)
-
-    def update_deployment_bandwidth(bandwidth_mbps):
-        """
-        Updates the deployment's annotation to set egress bandwidth limit.
-        """
-        try:
-            # Get current deployment
-            deployment = v1_apps.read_namespaced_deployment(
-                name=deployment_name,
-                namespace=namespace
-            )
-            
-            # Prepare the bandwidth annotation
-            bandwidth_value = f"{bandwidth_mbps}M"
-            
-            # Update deployment template annotations
-            if deployment.spec.template.metadata is None:
-                deployment.spec.template.metadata = client.V1ObjectMeta()
-            
-            if deployment.spec.template.metadata.annotations is None:
-                deployment.spec.template.metadata.annotations = {}
-            
-            deployment.spec.template.metadata.annotations[
-                "kubernetes.io/egress-bandwidth"
-            ] = bandwidth_value
-            
-            # Patch the deployment
-            v1_apps.patch_namespaced_deployment(
-                name=deployment_name,
-                namespace=namespace,
-                body=deployment
-            )
-            
-            print(f"Successfully updated bandwidth limit to {bandwidth_value}")
-            return True
-            
-        except Exception as e:
-            print(f"Error updating deployment: {e}")
-            return False
-
-    # Main control loop
-    current_bandwidth = 100  # Starting bandwidth in Mbps
-
-    def main():
-        global current_bandwidth
-        
-        print("ML Controller starting...")
-        while True:
-            try:
-                # Get current jitter from Prometheus/Hubble
-                current_jitter = get_critical_app_latency()
-                print(f"Current jitter: {current_jitter:.2f}ms")
-                
-                # Calculate new bandwidth limit
-                new_bandwidth = adjust_bandwidth(current_jitter)
-                
-                # Only update if bandwidth changed significantly
-                if abs(new_bandwidth - current_bandwidth) >= 5:
-                    if update_deployment_bandwidth(new_bandwidth):
-                        current_bandwidth = new_bandwidth
-                
-                # Sleep for control interval
-                time.sleep(5)  # Adjust as needed
-                
-            except Exception as e:
-                print(f"Error in main loop: {e}")
-                time.sleep(5)  # Wait before retrying
-
-    if __name__ == "__main__":
-        main()

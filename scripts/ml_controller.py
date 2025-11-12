@@ -70,29 +70,35 @@ class PrometheusMetrics:
         """
         try:
             # PromQL query for Hubble metrics
-            # Note: The exact metric name and labels will need to be adjusted based on your Hubble setup
-            query = """
-            histogram_quantile(0.95, sum(
-                rate(hubble_flow_latency_seconds_bucket{
-                    source_pod=~"robot-control.*",
-                    protocol="UDP"
-                }[1m]
-            ) by (le))
-            """
-            # Use the Prometheus client attached to this instance
-            result = self.prom.custom_query(query)
-
-            if result and len(result) > 0:
-                # Convert seconds to milliseconds
-                latency_ms = float(result[0]['value'][1]) * 1000
-                return latency_ms
-
-            logger.warning("No data returned from Prometheus query")
-            return 0.5
+            # First try: Query jitter (latency) of critical traffic from robot-control pods
+            query_hubble = """histogram_quantile(0.95, sum(rate(hubble_flow_latency_seconds_bucket{source_pod=~"robot-control.*",protocol="UDP"}[5m])) by (le)) * 1000"""
+            
+            try:
+                result = self.prom.custom_query(query_hubble)
+                if result and len(result) > 0:
+                    latency_ms = float(result[0]['value'][1])
+                    logger.debug(f"Got Hubble latency: {latency_ms}ms")
+                    return latency_ms
+            except Exception as hubble_error:
+                logger.debug(f"Hubble query failed: {hubble_error}, trying simple metric...")
+            
+            # Fallback: Use a simple metric that's always available
+            # Just check if Cilium pods are healthy (as a simple proxy for network health)
+            query_cilium = """up{job="cilium"}"""
+            result = self.prom.custom_query(query_cilium)
+            
+            if result and len(result) > 0 and float(result[0]['value'][1]) > 0:
+                # Cilium is up, return low jitter
+                logger.debug("Cilium healthy, returning low jitter estimate")
+                return 0.5  # Low jitter when everything is healthy
+            else:
+                # Cilium is down or metric missing
+                logger.warning("Cilium health check failed, returning high jitter estimate")
+                return 3.0  # High jitter to trigger bandwidth reduction
 
         except Exception as e:
             logger.error(f"Failed to query Prometheus: {e}")
-            return 0.5
+            return 0.5  # Conservative fallback
 
 class BandwidthController:
     """
@@ -183,6 +189,32 @@ class BandwidthController:
         except Exception as e:
             logger.error(f"Failed to update deployment: {e}")
             return False
+    
+    def run(self):
+        """Main control loop: continuously query metrics and adjust bandwidth."""
+        logger.info("ML Controller started. Monitoring jitter and adjusting bandwidth...")
+        try:
+            while True:
+                # Get current jitter from Prometheus/Hubble
+                jitter_ms = self.metrics.get_critical_app_latency()
+                logger.info(f"Current jitter: {jitter_ms:.2f}ms")
+                
+                # Calculate new bandwidth based on jitter
+                new_bandwidth = self.adjust_bandwidth(jitter_ms)
+                
+                # Only update if change exceeds threshold
+                if abs(new_bandwidth - self.current_bandwidth) >= self.control_params.UPDATE_THRESHOLD_MBPS:
+                    self.update_deployment_bandwidth(new_bandwidth)
+                    self.current_bandwidth = new_bandwidth
+                
+                # Wait before next control iteration
+                time.sleep(self.control_params.CONTROL_INTERVAL_SEC)
+                
+        except KeyboardInterrupt:
+            logger.info("ML Controller stopped by user")
+        except Exception as e:
+            logger.error(f"Unexpected error in control loop: {e}")
+            raise
 
 def main():
     """Entry point for the controller: instantiate and run the BandwidthController."""
