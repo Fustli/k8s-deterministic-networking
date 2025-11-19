@@ -1,0 +1,277 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-controller-grafana-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  ml-controller-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "ML Controller - Deterministic Networking",
+        "tags": ["ml-controller", "networking", "bandwidth"],
+        "style": "dark",
+        "timezone": "browser",
+        "refresh": "10s",
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "panels": [
+          {
+            "id": 1,
+            "title": "Controller Status Overview",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "ml_controller_is_leader",
+                "legendFormat": "{{instance_id}} Leader",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "mappings": [
+                  {
+                    "options": {
+                      "0": {
+                        "text": "Follower",
+                        "color": "orange"
+                      },
+                      "1": {
+                        "text": "Leader", 
+                        "color": "green"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ],
+                "unit": "short"
+              }
+            },
+            "options": {
+              "orientation": "auto",
+              "reduceOptions": {
+                "values": false,
+                "fields": "",
+                "calcs": ["last"]
+              },
+              "textMode": "auto"
+            },
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Current Bandwidth Setting",
+            "type": "gauge",
+            "targets": [
+              {
+                "expr": "ml_controller_current_bandwidth_mbps{ml_controller_is_leader=\"1\"}",
+                "legendFormat": "Bandwidth (Mbps)",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "yellow", "value": 50},
+                    {"color": "green", "value": 100},
+                    {"color": "blue", "value": 500}
+                  ]
+                },
+                "unit": "Mbps",
+                "min": 10,
+                "max": 1000
+              }
+            },
+            "options": {
+              "reduceOptions": {
+                "values": false,
+                "fields": "",
+                "calcs": ["last"]
+              },
+              "orientation": "auto",
+              "showThresholdLabels": false,
+              "showThresholdMarkers": true
+            },
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Bandwidth Control History",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "ml_controller_current_bandwidth_mbps",
+                "legendFormat": "{{instance_id}} Bandwidth",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "unit": "Mbps",
+                "min": 10,
+                "max": 1000
+              }
+            },
+            "options": {
+              "tooltip": {
+                "mode": "single",
+                "sort": "none"
+              },
+              "legend": {
+                "displayMode": "list",
+                "placement": "bottom"
+              }
+            },
+            "gridPos": {"h": 9, "w": 24, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Controller Health Status",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "ml_controller_control_loop_running",
+                "legendFormat": "{{instance_id}} Control Loop",
+                "refId": "A"
+              },
+              {
+                "expr": "ml_controller_metrics_healthy",
+                "legendFormat": "{{instance_id}} Metrics Health",
+                "refId": "B"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "unit": "short",
+                "min": 0,
+                "max": 1,
+                "mappings": [
+                  {
+                    "options": {
+                      "0": {"text": "Unhealthy", "color": "red"},
+                      "1": {"text": "Healthy", "color": "green"}
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            },
+            "gridPos": {"h": 9, "w": 12, "x": 0, "y": 17}
+          },
+          {
+            "id": 5,
+            "title": "Leader Election Status",
+            "type": "timeseries", 
+            "targets": [
+              {
+                "expr": "ml_controller_is_leader",
+                "legendFormat": "{{instance_id}} Leadership",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "unit": "short",
+                "min": 0,
+                "max": 1,
+                "mappings": [
+                  {
+                    "options": {
+                      "0": {"text": "Follower", "color": "orange"},
+                      "1": {"text": "Leader", "color": "green"}
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            },
+            "gridPos": {"h": 9, "w": 12, "x": 12, "y": 17}
+          },
+          {
+            "id": 6,
+            "title": "Controller Uptime",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "ml_controller_uptime_seconds",
+                "legendFormat": "{{instance_id}} Uptime",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "yellow", "value": 300},
+                    {"color": "green", "value": 3600}
+                  ]
+                },
+                "unit": "s"
+              }
+            },
+            "options": {
+              "reduceOptions": {
+                "values": false,
+                "fields": "",
+                "calcs": ["last"]
+              },
+              "textMode": "auto"
+            },
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 26}
+          },
+          {
+            "id": 7,
+            "title": "Pod Resource Usage",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total{pod=~\"ml-controller-ha-.*\"}[5m]) * 100",
+                "legendFormat": "{{pod}} CPU %",
+                "refId": "A"
+              },
+              {
+                "expr": "container_memory_working_set_bytes{pod=~\"ml-controller-ha-.*\"} / 1024 / 1024",
+                "legendFormat": "{{pod}} Memory MB",
+                "refId": "B"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "unit": "percent"
+              }
+            },
+            "gridPos": {"h": 9, "w": 24, "x": 0, "y": 34}
+          }
+        ]
+      }
+    }

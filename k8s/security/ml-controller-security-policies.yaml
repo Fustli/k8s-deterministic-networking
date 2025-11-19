@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ml-controller-secrets
+  namespace: kube-system
+type: Opaque
+stringData:
+  # Prometheus credentials (if auth required)
+  prometheus_username: ""
+  prometheus_password: ""
+  
+  # Additional service credentials
+  service_account_token: ""
+  
+  # TLS certificates (base64 encoded)
+  tls_cert: ""
+  tls_key: ""
+  ca_cert: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-controller-security-config
+  namespace: kube-system
+data:
+  # Security configuration
+  security_policies.yaml: |
+    # Network access controls
+    allowed_prometheus_hosts:
+      - "prometheus.monitoring.svc.cluster.local"
+      - "prometheus-server.monitoring.svc.cluster.local" 
+    
+    # API rate limiting
+    api_rate_limits:
+      kubernetes_api_calls_per_second: 10
+      prometheus_queries_per_minute: 60
+    
+    # Security headers
+    http_security_headers:
+      - "X-Content-Type-Options: nosniff"
+      - "X-Frame-Options: DENY" 
+      - "X-XSS-Protection: 1; mode=block"
+      - "Strict-Transport-Security: max-age=31536000"
+    
+    # Resource limits
+    security_limits:
+      max_log_size_mb: 100
+      max_metrics_retention_hours: 24
+      max_concurrent_connections: 50
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ml-controller-security-hardened
+rules:
+# Minimal deployment permissions - read/update only specific deployment
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "patch", "update"]
+  resourceNames: ["telemetry-upload-deployment"]  # Restrict to specific deployment
+  
+# Minimal pod permissions - read only for monitoring
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+  
+# Leader election permissions - scoped to specific lease name
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  resourceNames: ["ml-controller-leader"]  # Restrict to specific lease
+  
+# Event creation - limited scope for operational events
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+  
+# Network policy permissions - minimal for status checking
+- apiGroups: ["cilium.io"]
+  resources: ["ciliumnetworkpolicies"]
+  verbs: ["get", "list", "watch"]
+  
+# Service account token access - self only
+- apiGroups: [""]
+  resources: ["serviceaccounts/token"]
+  verbs: ["create"]
+  resourceNames: ["ml-controller-ha-sa"]
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: ml-controller-psp
+spec:
+  # Privileged access controls
+  privileged: false
+  allowPrivilegeEscalation: false
+  
+  # Required security contexts
+  requiredDropCapabilities:
+    - ALL
+  allowedCapabilities: []
+  
+  # Volume restrictions
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+  allowedFlexVolumes: []
+  
+  # Host access restrictions
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  hostPorts: []
+  
+  # User restrictions
+  runAsUser:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 65535
+  runAsGroup:
+    rule: 'MustRunAs'  
+    ranges:
+      - min: 1000
+        max: 65535
+  
+  # Filesystem restrictions
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 65535
+  readOnlyRootFilesystem: false  # Need writable tmp for health markers
+  
+  # Network restrictions
+  allowedHostPaths: []
+  
+  # SELinux (if enabled)
+  seLinux:
+    rule: 'RunAsAny'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ml-controller-psp-user
+rules:
+- apiGroups: ["policy"]
+  resources: ["podsecuritypolicies"]
+  verbs: ["use"]
+  resourceNames: ["ml-controller-psp"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ml-controller-psp-binding
+roleRef:
+  kind: ClusterRole
+  name: ml-controller-psp-user
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: ml-controller-ha-sa
+  namespace: kube-system

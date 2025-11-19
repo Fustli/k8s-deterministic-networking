@@ -1,0 +1,248 @@
+---
+# Test Clients for Realistic Traffic Generation
+# Creates various clients that generate network flows for Hubble to capture
+# and metrics for Prometheus to collect
+
+---
+# HTTP Client (High-frequency requests)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-client
+  namespace: default
+  labels:
+    app: http-client
+    traffic-type: http
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: http-client
+  template:
+    metadata:
+      labels:
+        app: http-client
+        traffic-type: http
+    spec:
+      containers:
+      - name: client
+        image: curlimages/curl:latest
+        command:
+          - sh
+          - -c
+          - |
+            echo "HTTP Traffic Generator starting..."
+            while true; do
+              # Generate requests to robot-control service
+              curl -s -m 2 http://robot-control-deployment:80/status 2>/dev/null || true
+              sleep 1
+              
+              # Generate requests to safety-scanner service  
+              curl -s -m 2 http://safety-scanner-deployment:80/health 2>/dev/null || true
+              sleep 1
+              
+              # Generate requests to telemetry service
+              curl -s -m 2 http://telemetry-upload-deployment:80/metrics 2>/dev/null || true
+              sleep 2
+            done
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+
+---
+# UDP Client (DNS-like queries and UDP traffic)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udp-client
+  namespace: default
+  labels:
+    app: udp-client
+    traffic-type: udp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: udp-client
+  template:
+    metadata:
+      labels:
+        app: udp-client
+        traffic-type: udp
+    spec:
+      containers:
+      - name: client
+        image: alpine:latest
+        command:
+          - sh
+          - -c
+          - |
+            echo "UDP Traffic Generator starting..."
+            apk add --no-cache nc-openbsd dnsmasq-utils
+            while true; do
+              # DNS queries (UDP port 53)
+              nslookup robot-control-deployment.default.svc.cluster.local 2>/dev/null || true
+              nslookup safety-scanner-deployment.default.svc.cluster.local 2>/dev/null || true
+              nslookup telemetry-upload-deployment.default.svc.cluster.local 2>/dev/null || true
+              sleep 3
+              
+              # General UDP traffic (echo-like)
+              echo "test traffic" | nc -u -w1 robot-control-deployment 5353 2>/dev/null || true
+              sleep 2
+            done
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+
+---
+# High-Frequency TCP Client (Simulates continuous connections)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcp-client
+  namespace: default
+  labels:
+    app: tcp-client
+    traffic-type: tcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcp-client
+  template:
+    metadata:
+      labels:
+        app: tcp-client
+        traffic-type: tcp
+    spec:
+      containers:
+      - name: client
+        image: alpine:latest
+        command:
+          - sh
+          - -c
+          - |
+            echo "TCP Traffic Generator starting..."
+            apk add --no-cache nc-openbsd
+            while true; do
+              # TCP connections to various ports
+              (echo "GET / HTTP/1.1"; sleep 0.5) | nc -w 2 robot-control-deployment 8080 2>/dev/null || true
+              sleep 1
+              
+              (echo "GET / HTTP/1.1"; sleep 0.5) | nc -w 2 safety-scanner-deployment 9090 2>/dev/null || true
+              sleep 1
+              
+              (echo "PING"; sleep 0.5) | nc -w 2 telemetry-upload-deployment 5000 2>/dev/null || true
+              sleep 2
+            done
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+
+---
+# Burst Traffic Generator (Generates traffic spikes for jitter measurement)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: burst-traffic-generator
+  namespace: default
+spec:
+  # Run every 5 minutes
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: default
+          containers:
+          - name: burst-generator
+            image: curlimages/curl:latest
+            command:
+              - sh
+              - -c
+              - |
+                echo "Generating traffic burst..."
+                for i in {1..20}; do
+                  curl -s -m 1 http://robot-control-deployment:80/status &
+                  curl -s -m 1 http://safety-scanner-deployment:80/health &
+                  curl -s -m 1 http://telemetry-upload-deployment:80/metrics &
+                  sleep 0.1
+                done
+                wait
+                echo "Burst complete"
+            resources:
+              requests:
+                cpu: 100m
+                memory: 64Mi
+              limits:
+                cpu: 200m
+                memory: 128Mi
+          restartPolicy: OnFailure
+
+---
+# Monitoring Service for Traffic Clients
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-client
+  namespace: default
+spec:
+  selector:
+    app: http-client
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: udp-client
+  namespace: default
+spec:
+  selector:
+    app: udp-client
+  ports:
+  - port: 53
+    targetPort: 53
+    protocol: UDP
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcp-client
+  namespace: default
+spec:
+  selector:
+    app: tcp-client
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
