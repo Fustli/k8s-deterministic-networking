@@ -55,6 +55,20 @@ spec:
         env:
         - name: PROMETHEUS_URL
           value: "http://prometheus.monitoring.svc.cluster.local:9090"
+        - name: TARGET_APPLICATION
+          value: "robot-factory-deployment"
+        - name: TARGET_JITTER_MS
+          value: "5.0"
+        - name: TARGET_LATENCY_MS
+          value: "20.0"
+        - name: MIN_BANDWIDTH_MBPS
+          value: "10"
+        - name: MAX_BANDWIDTH_MBPS
+          value: "1000"
+        - name: EWMA_ALPHA
+          value: "0.7"
+        - name: COOLDOWN_PERIOD_SEC
+          value: "30"
         volumeMounts:
         - name: script-volume
           mountPath: /app

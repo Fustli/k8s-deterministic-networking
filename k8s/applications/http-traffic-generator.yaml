@@ -1,0 +1,169 @@
+---
+# HTTP Traffic Generator for Testing ML Controller
+# Generates continuous HTTP traffic to robot-factory to trigger QoS metrics
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-traffic-generator
+  labels:
+    app: http-traffic-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-traffic-generator
+  template:
+    metadata:
+      labels:
+        app: http-traffic-generator
+    spec:
+      containers:
+      - name: hey
+        image: williamyeh/hey:latest
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            echo "Starting continuous HTTP traffic to robot-factory..."
+            while true; do
+              echo "[$(date)] Sending HTTP requests to robot-factory-svc..."
+              /hey -n 1000 -c 10 -q 10 http://robot-factory-svc:80/
+              sleep 2
+            done
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+
+---
+# Robot Factory HTTP Server (replaces iperf3)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-factory-deployment
+  labels:
+    app: robot-factory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot-factory
+  template:
+    metadata:
+      labels:
+        app: robot-factory
+        priority: critical
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: html
+          mountPath: /usr/share/nginx/html
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: robot-factory-nginx-config
+      - name: html
+        configMap:
+          name: robot-factory-html
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: robot-factory-svc
+  labels:
+    app: robot-factory
+spec:
+  selector:
+    app: robot-factory
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+
+---
+# Nginx configuration for robot-factory
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-factory-nginx-config
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+        
+        # Logging for debugging
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+        
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+        
+        # Simulate API endpoints
+        location /api/status {
+            add_header Content-Type application/json;
+            return 200 '{"status":"operational","timestamp":"${msec}"}';
+        }
+        
+        location /api/robot/position {
+            add_header Content-Type application/json;
+            return 200 '{"x":123.45,"y":678.90,"z":10.5,"timestamp":"${msec}"}';
+        }
+        
+        location /api/robot/health {
+            add_header Content-Type application/json;
+            return 200 '{"battery":85,"temperature":45,"status":"OK"}';
+        }
+    }
+
+---
+# HTML content for robot-factory
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-factory-html
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Robot Factory Control System</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f0f0f0; }
+            .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            h1 { color: #2c3e50; }
+            .status { display: inline-block; padding: 5px 10px; border-radius: 4px; }
+            .operational { background: #2ecc71; color: white; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Robot Factory Control System</h1>
+            <p>Status: <span class="status operational">OPERATIONAL</span></p>
+            <p>This is a critical QoS application for deterministic networking testing.</p>
+            <p>The ML controller should protect this service's latency by throttling best-effort traffic.</p>
+        </div>
+    </body>
+    </html>

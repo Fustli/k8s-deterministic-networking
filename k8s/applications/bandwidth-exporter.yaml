@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bandwidth-exporter-script
+  namespace: kube-system
+data:
+  bandwidth_exporter.py: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bandwidth-exporter
+  namespace: kube-system
+  labels:
+    app: bandwidth-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bandwidth-exporter
+  template:
+    metadata:
+      labels:
+        app: bandwidth-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ml-controller-sa
+      containers:
+      - name: exporter
+        image: python:3.11-slim
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          pip install --no-cache-dir kubernetes prometheus-client
+          python /app/bandwidth_exporter.py
+        ports:
+        - name: metrics
+          containerPort: 8000
+          protocol: TCP
+        volumeMounts:
+        - name: script-volume
+          mountPath: /app
+      volumes:
+      - name: script-volume
+        configMap:
+          name: bandwidth-exporter-script
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bandwidth-exporter
+  namespace: kube-system
+  labels:
+    app: bandwidth-exporter
+spec:
+  ports:
+  - name: metrics
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: bandwidth-exporter

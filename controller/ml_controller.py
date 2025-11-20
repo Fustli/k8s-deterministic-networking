@@ -127,7 +127,7 @@ class ControllerConfig:
             'PROMETHEUS_URL', 'http://prometheus-server:9090', config_dict, str
         )
         self.TARGET_APPLICATION = get_config_value(
-            'TARGET_APPLICATION', 'robot-factory', config_dict, str
+            'TARGET_APPLICATION', 'robot-factory-deployment', config_dict, str
         )
         
         self.TARGET_JITTER_MS = get_config_value(
@@ -201,10 +201,14 @@ class ControllerConfig:
 class PrometheusMetrics:
     """Handles all Prometheus/Hubble metric queries and processing"""
     
-    def __init__(self, config: ControllerConfig):
+    def __init__(self, config: ControllerConfig, target_workloads: list = None):
         """Initialize Prometheus client connection"""
         self.prom = PrometheusConnect(url=config.PROMETHEUS_URL, disable_ssl=True)
-        self.target_app = config.TARGET_APPLICATION
+        self.target_workloads = target_workloads or []
+        
+    def set_target_workloads(self, workloads: list):
+        """Update target workloads to monitor"""
+        self.target_workloads = workloads
         
     def get_latency_metrics(self) -> Tuple[float, float]:
         """
@@ -234,11 +238,18 @@ class PrometheusMetrics:
             Tuple[Optional[float], Optional[float]]: (jitter_ms, p95_latency_ms) or (None, None)
         """
         try:
+            if not self.target_workloads:
+                logger.warning("No target workloads configured")
+                return None, None
+            
+            # Build workload filter for query (match any critical workload)
+            workload_filter = '|'.join(self.target_workloads)
+            
             # Query for Q1 (25th percentile) latency from Hubble
             q1_query = f'''
             histogram_quantile(0.25, 
                 rate(hubble_http_request_duration_seconds_bucket{{
-                    destination_app="{self.target_app}"
+                    destination_workload=~"{workload_filter}"
                 }}[5m])
             ) * 1000
             '''
@@ -247,7 +258,7 @@ class PrometheusMetrics:
             q3_query = f'''
             histogram_quantile(0.75, 
                 rate(hubble_http_request_duration_seconds_bucket{{
-                    destination_app="{self.target_app}"
+                    destination_workload=~"{workload_filter}"
                 }}[5m])
             ) * 1000
             '''
@@ -256,7 +267,7 @@ class PrometheusMetrics:
             p95_query = f'''
             histogram_quantile(0.95, 
                 rate(hubble_http_request_duration_seconds_bucket{{
-                    destination_app="{self.target_app}"
+                    destination_workload=~"{workload_filter}"
                 }}[5m])
             ) * 1000
             '''
@@ -311,7 +322,15 @@ class BandwidthController:
             
         # Initialize clients
         self.k8s_client = client.AppsV1Api()
-        self.metrics = PrometheusMetrics(self.config)
+        
+        # Auto-discover deployments by priority labels
+        self.critical_deployments = []
+        self.best_effort_deployments = []
+        self._discover_deployments()
+        
+        # Initialize metrics with discovered critical apps
+        critical_workloads = [dep['workload'] for dep in self.critical_deployments]
+        self.metrics = PrometheusMetrics(self.config, critical_workloads)
         
         # Initialize controller state
         self.current_bandwidth = 100  # Starting bandwidth in Mbps
@@ -323,6 +342,39 @@ class BandwidthController:
         # Hysteresis state
         self.last_change_time: Optional[float] = None
         self.last_bandwidth_change: int = 0  # Track direction: -1 decrease, 0 none, +1 increase
+    
+    def _discover_deployments(self):
+        """Discover deployments based on priority labels"""
+        try:
+            namespaces = ['default', 'kube-system']
+            for namespace in namespaces:
+                deployments = self.k8s_client.list_namespaced_deployment(namespace=namespace)
+                for dep in deployments.items:
+                    # Check pod template labels for priority
+                    pod_labels = dep.spec.template.metadata.labels or {}
+                    priority = pod_labels.get('priority', '')
+                    
+                    if priority == 'critical':
+                        self.critical_deployments.append({
+                            'name': dep.metadata.name,
+                            'namespace': namespace,
+                            'workload': dep.metadata.name
+                        })
+                        logger.info(f"Found CRITICAL deployment: {namespace}/{dep.metadata.name}")
+                    elif priority == 'best-effort':
+                        self.best_effort_deployments.append({
+                            'name': dep.metadata.name,
+                            'namespace': namespace
+                        })
+                        logger.info(f"Found BEST-EFFORT deployment: {namespace}/{dep.metadata.name}")
+            
+            if not self.critical_deployments:
+                logger.warning("No critical deployments found with priority=critical label")
+            if not self.best_effort_deployments:
+                logger.warning("No best-effort deployments found with priority=best-effort label")
+                
+        except Exception as e:
+            logger.error(f"Error discovering deployments: {e}")
     
     def apply_ewma_smoothing(self, raw_jitter: float, raw_latency: float) -> Tuple[float, float]:
         """
@@ -470,48 +522,56 @@ class BandwidthController:
 
     def update_deployment_bandwidth(self, bandwidth_mbps: int) -> bool:
         """
-        Update the Kubernetes deployment with new bandwidth annotation.
+        Update all best-effort deployments with new bandwidth annotation.
         
         Args:
             bandwidth_mbps: New bandwidth limit in Mbps
             
         Returns:
-            bool: True if update was successful, False otherwise
+            bool: True if all updates were successful, False otherwise
         """
-        try:
-            # Fetch current deployment
-            deployment = self.k8s_client.read_namespaced_deployment(
-                name=self.config.DEPLOYMENT_NAME,
-                namespace=self.config.NAMESPACE
-            )
+        if not self.best_effort_deployments:
+            logger.warning("No best-effort deployments to throttle")
+            return False
             
-            # Ensure metadata and annotations exist
-            if deployment.spec.template.metadata is None:
-                deployment.spec.template.metadata = client.V1ObjectMeta()
-            if deployment.spec.template.metadata.annotations is None:
-                deployment.spec.template.metadata.annotations = {}
-            
-            # Update bandwidth annotation
-            deployment.spec.template.metadata.annotations[
-                self.config.BANDWIDTH_ANNOTATION
-            ] = f"{bandwidth_mbps}M"
-            
-            # Apply the update
-            self.k8s_client.patch_namespaced_deployment(
-                name=self.config.DEPLOYMENT_NAME,
-                namespace=self.config.NAMESPACE,
-                body=deployment
-            )
-            
-            # Update hysteresis timestamp
+        success = True
+        for dep_info in self.best_effort_deployments:
+            try:
+                # Fetch current deployment
+                deployment = self.k8s_client.read_namespaced_deployment(
+                    name=dep_info['name'],
+                    namespace=dep_info['namespace']
+                )
+                
+                # Ensure metadata and annotations exist
+                if deployment.spec.template.metadata is None:
+                    deployment.spec.template.metadata = client.V1ObjectMeta()
+                if deployment.spec.template.metadata.annotations is None:
+                    deployment.spec.template.metadata.annotations = {}
+                
+                # Update bandwidth annotation
+                deployment.spec.template.metadata.annotations[
+                    'kubernetes.io/egress-bandwidth'
+                ] = f"{bandwidth_mbps}M"
+                
+                # Apply the update
+                self.k8s_client.patch_namespaced_deployment(
+                    name=dep_info['name'],
+                    namespace=dep_info['namespace'],
+                    body=deployment
+                )
+                
+                logger.info(f"Updated {dep_info['namespace']}/{dep_info['name']} bandwidth to {bandwidth_mbps}Mbps")
+                
+            except Exception as e:
+                logger.error(f"Failed to update {dep_info['namespace']}/{dep_info['name']}: {e}")
+                success = False
+        
+        if success:
+            # Update hysteresis timestamp only if all updates succeeded
             self.last_change_time = time.time()
             
-            logger.info(f"Updated bandwidth limit to {bandwidth_mbps}Mbps")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to update deployment: {e}")
-            return False
+        return success
     
     def run(self):
         """

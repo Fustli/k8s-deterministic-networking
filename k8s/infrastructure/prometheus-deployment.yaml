@@ -90,6 +90,15 @@ data:
               node: kube-worker-2
               node_role: worker
 
+      # Bandwidth Exporter (ML Controller metrics)
+      - job_name: 'bandwidth-exporter'
+        static_configs:
+          - targets:
+            - 'bandwidth-exporter.kube-system:8000'
+            labels:
+              job: bandwidth-exporter
+              app: ml-controller
+
       # Node Exporter (if available)
       - job_name: 'node-exporter'
         kubernetes_sd_configs:
