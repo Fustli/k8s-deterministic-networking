@@ -65,8 +65,8 @@ data:
           "options": {"showLegend": true},
           "targets": [
             {
-              "expr": "rate(cilium_flows_processed_total[1m])",
-              "legendFormat": "{{pod}}",
+              "expr": "rate(hubble_flows_processed_total[1m])",
+              "legendFormat": "{{instance}} - {{protocol}}",
               "refId": "A"
             }
           ],
@@ -81,12 +81,12 @@ data:
           "options": {"showLegend": true},
           "targets": [
             {
-              "expr": "cilium_conntrack_gc_runs_total",
-              "legendFormat": "{{pod}}",
+              "expr": "cilium_datapath_conntrack_gc_runs_total",
+              "legendFormat": "{{instance}}",
               "refId": "A"
             }
           ],
-          "title": "Connection Tracking",
+          "title": "Connection Tracking GC Runs",
           "type": "stat"
         }
       ],
