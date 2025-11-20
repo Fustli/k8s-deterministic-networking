@@ -51,20 +51,44 @@ data:
         static_configs:
           - targets:
             - '172.16.0.59:9962'
+            labels:
+              job: cilium
+              node: kube-master
+              node_role: control-plane
+          - targets:
             - '172.16.0.79:9962'
+            labels:
+              job: cilium
+              node: kube-worker-1
+              node_role: worker
+          - targets:
             - '172.16.0.25:9962'
             labels:
               job: cilium
+              node: kube-worker-2
+              node_role: worker
 
       # Hubble metrics (static config using hostNetwork IPs)
       - job_name: 'hubble'
         static_configs:
           - targets:
             - '172.16.0.59:9965'
+            labels:
+              job: hubble
+              node: kube-master
+              node_role: control-plane
+          - targets:
             - '172.16.0.79:9965'
+            labels:
+              job: hubble
+              node: kube-worker-1
+              node_role: worker
+          - targets:
             - '172.16.0.25:9965'
             labels:
               job: hubble
+              node: kube-worker-2
+              node_role: worker
 
       # Node Exporter (if available)
       - job_name: 'node-exporter'
