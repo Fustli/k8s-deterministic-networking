@@ -46,47 +46,25 @@ data:
             action: keep
             regex: default;kubernetes;https
 
-      # Cilium/Hubble metrics
+      # Cilium metrics (static config using hostNetwork IPs)
       - job_name: 'cilium'
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - kube-system
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_k8s_app]
-            action: keep
-            regex: cilium
-          - source_labels: [__meta_kubernetes_pod_container_port_name]
-            action: keep
-            regex: metrics
-          - source_labels: [__meta_kubernetes_pod_node_name]
-            target_label: node
-          - source_labels: [__meta_kubernetes_namespace]
-            target_label: namespace
+        static_configs:
+          - targets:
+            - '172.16.0.59:9962'
+            - '172.16.0.79:9962'
+            - '172.16.0.25:9962'
+            labels:
+              job: cilium
 
-      # Hubble metrics via Cilium daemon
+      # Hubble metrics (static config using hostNetwork IPs)
       - job_name: 'hubble'
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - kube-system
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_k8s_app]
-            action: keep
-            regex: cilium
-          - source_labels: [__meta_kubernetes_pod_container_port_name]
-            action: keep
-            regex: metrics
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: pod
-          - source_labels: [__meta_kubernetes_pod_node_name]
-            target_label: node
-        metric_relabel_configs:
-          - source_labels: [__name__]
-            action: keep
-            regex: 'hubble_.*|cilium_.*'
+        static_configs:
+          - targets:
+            - '172.16.0.59:9965'
+            - '172.16.0.79:9965'
+            - '172.16.0.25:9965'
+            labels:
+              job: hubble
 
       # Node Exporter (if available)
       - job_name: 'node-exporter'
@@ -174,6 +152,8 @@ spec:
         prometheus.io/port: "9090"
     spec:
       serviceAccountName: prometheus
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       securityContext:
         fsGroup: 65534
         runAsNonRoot: true
