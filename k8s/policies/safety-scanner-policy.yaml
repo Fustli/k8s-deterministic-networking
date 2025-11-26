@@ -1,44 +1,19 @@
 apiVersion: "cilium.io/v2"
 kind: CiliumNetworkPolicy
 metadata:
-  name: "safety-scanner-policy"
-  namespace: default
+  name: safety-scanner-allow-critical
 spec:
-  description: "Policy for safety scanner system with high-bandwidth requirements"
+  description: "Critical Policy for Safety Scanner (TCP High Bandwidth)"
   endpointSelector:
     matchLabels:
       app: safety-scanner
-      priority: critical
   
-  # Ingress rules for scanner data
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: robot-control  # Only allow robot control system
-    toPorts:
+  - toPorts:
     - ports:
       - port: "5202"
         protocol: TCP
-      rules:
-        l7proto: tcp
   
-  # Egress rules for data processing and monitoring
   egress:
   - toEndpoints:
-    - matchLabels:
-        app: monitoring
-        component: metrics-collector
-    toPorts:
-    - ports:
-      - port: "9091"  # Prometheus metrics
-        protocol: TCP
-  - toEndpoints:
-    - matchLabels:
-        k8s:io.kubernetes.pod.namespace: kube-system
-        k8s:k8s-app: kube-dns
-    toPorts:
-    - ports:  # DNS resolution
-      - port: "53"
-        protocol: UDP
-      - port: "53"
-        protocol: TCP
+    - matchLabels: {}

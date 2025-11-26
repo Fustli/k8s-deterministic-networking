@@ -9,8 +9,8 @@ kind: ClusterRole
 metadata:
   name: cilium-policy-patcher
 rules:
-- apiGroups: ["cilium.io"]
-  resources: ["ciliumnetworkpolicies", "ciliumnetworkpolicies/status"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/status"]
   verbs: ["get", "list", "watch", "patch", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -50,25 +50,38 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
-          pip install --no-cache-dir kubernetes prometheus-api-client
+          pip install --no-cache-dir kubernetes
           python /app/ml_controller.py
         env:
-        - name: PROMETHEUS_URL
-          value: "http://prometheus.monitoring.svc.cluster.local:9090"
-        - name: TARGET_APPLICATION
-          value: "robot-factory-deployment"
+        # Active Probing Target (robot-control iperf3 ports - pure L4)
+        - name: TARGET_HOST
+          value: "robot-control-svc.default.svc.cluster.local"
+        - name: TARGET_TCP_PORT
+          value: "5201"
+        - name: TARGET_UDP_PORT
+          value: "5201"
+        # Noisy Neighbor to Throttle
+        - name: THROTTLE_DEPLOYMENT
+          value: "telemetry-upload-deployment"
+        - name: THROTTLE_NAMESPACE
+          value: "default"
+        # Jitter Threshold (ms) - IQR-based, 3ms accounts for baseline system variance
         - name: TARGET_JITTER_MS
-          value: "5.0"
-        - name: TARGET_LATENCY_MS
-          value: "20.0"
-        - name: MIN_BANDWIDTH_MBPS
+          value: "3.0"
+        # Bandwidth Limits (Mbps)
+        - name: MIN_BW
           value: "10"
-        - name: MAX_BANDWIDTH_MBPS
+        - name: MAX_BW
           value: "1000"
-        - name: EWMA_ALPHA
-          value: "0.7"
-        - name: COOLDOWN_PERIOD_SEC
-          value: "30"
+        - name: STEP_DOWN
+          value: "100"
+        - name: STEP_UP
+          value: "10"
+        # Probing Settings
+        - name: WINDOW_SIZE
+          value: "20"
+        - name: PROBE_INTERVAL
+          value: "0.5"
         volumeMounts:
         - name: script-volume
           mountPath: /app

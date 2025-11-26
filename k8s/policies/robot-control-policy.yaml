@@ -9,14 +9,12 @@ spec:
     matchLabels:
       app: robot-control
   
-  # Ingress rules for control traffic - allow from anywhere for testing
   ingress:
   - toPorts:
     - ports:
       - port: "5201"
         protocol: UDP
   
-  # Egress rules - allow outbound
   egress:
   - toEndpoints:
     - matchLabels: {}

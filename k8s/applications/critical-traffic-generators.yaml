@@ -1,0 +1,77 @@
+---
+# Traffic Generator for Robot Control
+# Purpose: Generate L4 traffic to simulate client load for robot-control-deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-control-generator
+  labels:
+    app: robot-control-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot-control-generator
+  template:
+    metadata:
+      labels:
+        app: robot-control-generator
+    spec:
+      containers:
+      - name: iperf3-client
+        image: networkstatic/iperf3
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "L4 Traffic Generator: Targeting robot-control-svc (UDP)..."
+            while true; do
+              iperf3 -c robot-control-svc -u -b 10M -t 30 -p 5201 || sleep 5
+              sleep 2
+            done
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+
+---
+# Traffic Generator for Safety Scanner
+# Purpose: Generate L4 traffic to simulate client load for safety-scanner-deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: safety-scanner-generator
+  labels:
+    app: safety-scanner-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: safety-scanner-generator
+  template:
+    metadata:
+      labels:
+        app: safety-scanner-generator
+    spec:
+      containers:
+      - name: iperf3-client
+        image: networkstatic/iperf3
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "L4 Traffic Generator: Targeting safety-scanner-svc (TCP)..."
+            while true; do
+              iperf3 -c safety-scanner-svc -b 50M -t 30 -p 5202 || sleep 5
+              sleep 2
+            done
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
