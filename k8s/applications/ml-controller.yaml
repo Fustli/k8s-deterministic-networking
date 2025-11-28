@@ -29,19 +29,19 @@ subjects:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ml-controller
+  name: flow-manager
   namespace: kube-system
   labels:
-    app: ml-controller
+    app: flow-manager
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ml-controller
+      app: flow-manager
   template:
     metadata:
       labels:
-        app: ml-controller
+        app: flow-manager
     spec:
       serviceAccountName: ml-controller-sa
       containers:
@@ -50,25 +50,35 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
-          pip install --no-cache-dir kubernetes
-          python /app/ml_controller.py
+          pip install --no-cache-dir kubernetes requests
+          python /app/flow_manager.py
         env:
-        # Active Probing Target (robot-control iperf3 ports - pure L4)
-        - name: TARGET_HOST
+        # --- Critical App: Robot Control (UDP, needs low jitter) ---
+        - name: ROBOT_CONTROL_HOST
           value: "robot-control-svc.default.svc.cluster.local"
-        - name: TARGET_TCP_PORT
+        - name: ROBOT_CONTROL_UDP_PORT
           value: "5201"
-        - name: TARGET_UDP_PORT
-          value: "5201"
-        # Noisy Neighbor to Throttle
+        # --- Critical App: Safety Scanner (TCP, needs guaranteed throughput) ---
+        - name: SAFETY_SCANNER_HOST
+          value: "safety-scanner-svc.default.svc.cluster.local"
+        - name: SAFETY_SCANNER_TCP_PORT
+          value: "5202"
+        # --- Prometheus for Hubble TCP throughput metrics ---
+        - name: PROMETHEUS_URL
+          value: "http://prometheus.monitoring:9090"
+        # --- Noisy Neighbor to Throttle ---
         - name: THROTTLE_DEPLOYMENT
           value: "telemetry-upload-deployment"
         - name: THROTTLE_NAMESPACE
           value: "default"
-        # Jitter Threshold (ms) - IQR-based, 3ms accounts for baseline system variance
-        - name: TARGET_JITTER_MS
-          value: "3.0"
-        # Bandwidth Limits (Mbps)
+        # --- SLA Thresholds ---
+        # UDP Jitter threshold (ms) - robot-control needs <5ms
+        - name: UDP_JITTER_THRESHOLD_MS
+          value: "5.0"
+        # TCP Throughput threshold (Mbps) - safety-scanner needs >50Mbps
+        - name: TCP_THROUGHPUT_THRESHOLD_MBPS
+          value: "50.0"
+        # --- Bandwidth Limits (Mbps) ---
         - name: MIN_BW
           value: "10"
         - name: MAX_BW
@@ -77,15 +87,17 @@ spec:
           value: "100"
         - name: STEP_UP
           value: "10"
-        # Probing Settings
+        # --- Control Loop Settings ---
         - name: WINDOW_SIZE
           value: "20"
         - name: PROBE_INTERVAL
           value: "0.5"
+        - name: PROMETHEUS_QUERY_INTERVAL
+          value: "5.0"
         volumeMounts:
         - name: script-volume
           mountPath: /app
       volumes:
       - name: script-volume
         configMap:
-          name: ml-controller-script
+          name: flow-manager-script

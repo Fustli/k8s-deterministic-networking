@@ -1,35 +1,34 @@
-# ML Controller
+# Flow Manager Controller
 
-This directory contains the production-grade ML controller for Kubernetes deterministic networking.
+This directory contains the production-grade controllers for Kubernetes deterministic networking.
 
 ## Files
 
-- `ml_controller.py` - Production controller with IQR jitter calculation, EWMA smoothing, and hysteresis
-- `.env` - Configuration file for controller parameters
-- `.env.production` - Production environment configuration template
+- `flow_manager.py` - Production controller using active TCP/UDP probing to measure jitter and control bandwidth.
+- `ml_controller_ebpf.py` - Alternative controller using eBPF to monitor kernel-level socket statistics for TCP and UDP.
+- `bandwidth_exporter.py` - A Prometheus exporter to expose bandwidth annotations as metrics.
 
 ## Features
 
-### Production-Grade Enhancements
-- **True Jitter Calculation**: Uses Interquartile Range (Q3 - Q1) from real Hubble metrics
-- **EWMA Signal Smoothing**: Reduces noise with configurable smoothing factor
-- **Hysteresis Control**: Prevents oscillation with cooldown periods
-- **Intelligent Throttling**: Distinguishes congestion vs distance/processing latency
-- **Configuration Management**: External `.env` file configuration
+### `flow_manager.py` (Active Probing)
+- **Real-time Metrics**: Bypasses Prometheus lag by actively probing the network path to the critical service using TCP and UDP.
+- **IQR Jitter Calculation**: Calculates jitter locally from a rolling window of probe latencies.
+- **Direct Action**: Dynamically patches deployment annotations to enforce bandwidth limits in near real-time.
+- **Dual-Protocol Probing**: Uses both TCP and UDP probes to get a comprehensive view of network health.
 
-### Requirements
-- Real Hubble network metrics (no synthetic fallbacks)
-- Prometheus with Hubble data access
-- Target application generating measurable traffic
+### `ml_controller_ebpf.py` (eBPF-based)
+- **Kernel-Level Monitoring**: Uses eBPF to track TCP RTT and UDP packet timing without application-level instrumentation.
+- **Low Overhead**: Captures network statistics directly from the kernel socket layer.
+- **EWMA Smoothing**: Applies an Exponentially Weighted Moving Average to latency and jitter signals to reduce noise.
 
 ## Usage
 
 ```bash
 # Deploy the production controller
-kubectl apply -f ../k8s/applications/ml-controller.yaml
+kubectl apply -f ../k8s/applications/flow-manager.yaml
 
 # Check controller logs
-kubectl logs -n kube-system deployment/ml-controller -f
+kubectl logs -n default deployment/flow-manager -f
 
 # Check current bandwidth
 kubectl get deployment telemetry-upload-deployment -o jsonpath='{.spec.template.metadata.annotations.kubernetes\.io/egress-bandwidth}'

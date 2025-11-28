@@ -1,0 +1,168 @@
+%                                             -*- coding: utf-8 -*-
+% Using LaTeX is highly recommended. 
+% If you correct/upgrade anything please send it back to help others' work.
+
+\documentclass[a4paper,oneside]{article}
+\usepackage[margin=3cm]{geometry}
+% =================================================================
+\usepackage[english]{babel}
+\selectlanguage{english}
+
+%=================================================================
+% Font encoding
+% The T1 font encoding is an 8-bit encoding and uses fonts that have 256 glyphs.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{multirow} 
+%================================================================
+% Use Times New Roman
+\usepackage{times}
+
+%================================================================
+% Figures
+% usage: \includegraphics[width=<width>]{fig.png}
+\usepackage{graphicx}
+
+% images root folder
+\graphicspath{{./figs/}}
+
+%================================================================
+% Package to create pdf hyperlinks
+%------------------------------------
+% Hyperref should be the last imported (except some problematic packages, e.g. algorithm)
+\usepackage[colorlinks=true]{hyperref}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HERE IS THE START OF THE DOCUMENT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\input{macros} % Import macros
+\markright{Your Name (NEPTUN)} % one sided title page!!!
+%--------------------------------------------------------------------
+% title page
+%--------------------------------------------------------------------
+
+\begin{titlepage}
+%bme logo 
+ \begin{figure}[h]
+    \centering
+      \includegraphics[width=12cm]{bme_logo.pdf}
+  \label{fig:bme_logo}
+  \end{figure}
+  \thispagestyle{empty}
+  
+  % generate title
+  \projectlaboratorytitle
+ 
+  \projectlaboratoryauthor{Your Name}{NEPTUN}{Specialization}{user@example.com}{Supervisor Name, PhD}{supervisor@tmit.bme.hu}{Supervisor2 Name}{supervisor2@tmit.bme.hu}
+ 
+ 
+  %\tasktitle
+  \tasktitle{Title of the project (one line)} 
+
+  %\taskdescription
+  \taskdescription{Short description of the project.}
+
+  % semester Arguments: #1=Semester (format: xxxx/xx , #2=I/II (without dot!))
+  \begin{center}
+    \semester{2018/19}{II}
+  \end{center}
+  
+\end{titlepage} 
+
+%==================================================================
+\begin{center}
+  \section{Theory and Background}
+  \label{sec:theory_background}
+\end{center}
+
+\subsection{Introduction}
+\label{sec:introduction}
+% TODO: Write content here.
+% - Introduce Kubernetes as the de-facto standard for container orchestration.
+% - Explain the challenge of network performance isolation in shared environments.
+% - State the thesis of your paper.
+% - Briefly outline the structure of the paper.
+
+\subsection{The Challenge of Multi-Tenant Networking in Kubernetes}
+\label{sec:challenges}
+% TODO: Write content here.
+% - Explain The Kubernetes Networking Model (Pods, Services, CNI).
+% - Describe the "Noisy Neighbor" Problem. Use diagrams.
+% - Discuss Quality of Service (QoS) in Networking (latency, jitter, bandwidth).
+
+\subsection{Enabling Technologies}
+\label{sec:enabling_technologies}
+% TODO: Write content here.
+% - Introduce eBPF and Cilium, highlighting the eBPF-based BandwidthManager.
+% - Introduce Control Theory Fundamentals (closed-loop, Proportional Controller, "cut fast, raise slow").
+
+\newpage
+%==================================================================
+\begin{center}
+  \section{System Design, Implementation, and Evaluation}
+  \label{sec:work}
+\end{center}
+
+\subsection{System Architecture}
+\label{sec:architecture}
+% TODO: Write content here.
+% - Present a high-level architecture diagram showing all components and the control loop.
+
+\subsection{The Adaptive Jitter Controller}
+\label{sec:controller_implementation}
+% TODO: Write content here.
+% - Detail the Real-time Jitter Measurement (NetworkProbe).
+% - Describe The Control Algorithm (BandwidthController).
+% - Explain the Bandwidth Throttling Mechanism (patching the annotation).
+
+\subsection{Evaluation and Results}
+\label{sec:evaluation}
+% TODO: Write content here.
+% - Describe the Testbed Environment (workloads, iperf3).
+% - Present the Verification Scenarios and Results (graphs of jitter and bandwidth).
+% - Include a Discussion analyzing the results.
+
+\subsection{Conclusion and Future Work}
+\label{sec:conclusion_future_work}
+% TODO: Write content here.
+% - Summarize the project in the Conclusion.
+% - Provide ideas for Future Work.
+
+\newpage
+%==================================================================
+\section{References}
+\label{sec:references}
+
+\begin{references}{9}
+\bibitem{eco} Umberto Eco, \emph{Hogyan írjunk szakdolgozatot?},
+  Kairosz Kiadó, 2000, ISBN: 9639137537.
+
+\bibitem{esterhazy} Esterházy Péter, \emph{Termelési-regény (Kisssregény),}
+  Magvető Könyvkiadó, 2004, ISBN: 9631423948.
+
+\bibitem{web} \emph{Tájékoztató a Műszaki Informatika Szak önálló
+    laboratórium tantárgyainak 2008/9. tanév I. félévi lezárásáról a
+    BME TMIT-en (VITMA367, VITMA380, VITT4353, VITT4330),}
+  \url{http://inflab.tmit.bme.hu/08o/lezar.shtml}, szerk.: Németh Felicián,
+  2008. november 5.
+
+\bibitem{wikipedia} Wikipedia contributors, \emph{Wikipedia:Academic
+    use}, Wikipedia, The Free Encyclopedia, 2011 Nov 11.  Available
+  from: \\ \url{http://en.wikipedia.org/w/index.php?title=Wikipedia:Academic\_use\&oldid=460041928}
+
+\end{references}
+
+\subsection{Attached documents}
+\label{sec:attached_documents}
+
+Source code etc.
+
+\end{document} 
+
+%%% Local Variables: 
+%%% mode: latex 
+%%% TeX-master: t 
+%%% End:
+

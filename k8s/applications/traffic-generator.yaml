@@ -1,0 +1,58 @@
+# k8s/applications/traffic-generator.yaml
+# Defines a Deployment for the traffic generator client.
+# It uses a standard network-multitool image and mounts the script from a ConfigMap.
+#
+# To deploy:
+# 1. Create the ConfigMap from the script file (run from the project root):
+#    kubectl create configmap traffic-generator-script --from-file=scripts/generate_traffic_patterns.sh -n default
+#
+# 2. Apply this manifest:
+#    kubectl apply -f k8s/applications/traffic-generator.yaml
+#
+# To use:
+# 1. Find the pod name:
+#    kubectl get pods -l app=traffic-generator -n default
+#
+# 2. Exec into the running pod:
+#    kubectl exec -it <pod-name> -n default -- /bin/bash
+#
+# 3. Run the script from inside the pod to generate traffic:
+#    # Example: Run a step load pattern
+#    /scripts/generate_traffic_patterns.sh step
+#
+#    # Example: Run a burst load pattern
+#    /scripts/generate_traffic_patterns.sh burst
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-generator
+  # IMPORTANT: Deploy this to the same namespace as your 'telemetry-upload' service.
+  # Using 'default' here as a placeholder.
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic-generator
+  template:
+    metadata:
+      labels:
+        app: traffic-generator
+    spec:
+      containers:
+      - name: network-tools
+        image: wbitt/network-multitool:latest # This image contains iperf3 and other essential network tools.
+        # This command keeps the container running indefinitely, so you can exec into it.
+        # It traps signals to allow for graceful pod termination.
+        command: ["/bin/sh", "-c", "trap : TERM INT; sleep infinity & wait"]
+        volumeMounts:
+        - name: script-volume
+          mountPath: /scripts # The script will be available at /scripts/generate_traffic_patterns.sh
+      volumes:
+      - name: script-volume
+        configMap:
+          # This must match the name of the ConfigMap you create.
+          name: traffic-generator-script
+          # This makes the script file executable.
+          defaultMode: 0755
