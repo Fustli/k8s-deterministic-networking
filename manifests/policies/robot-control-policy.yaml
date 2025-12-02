@@ -14,6 +14,10 @@ spec:
     - ports:
       - port: "5201"
         protocol: UDP
+      - port: "5201"
+        protocol: TCP
+      - port: "5203"
+        protocol: UDP
   
   egress:
   - toEndpoints:

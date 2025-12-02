@@ -17,6 +17,7 @@ import requests
 from typing import Dict, Optional, Tuple
 from collections import deque
 from kubernetes import client, config as k8s_config
+from prometheus_client import start_http_server, Gauge
 
 # Import config loader
 sys.path.insert(0, '/app')
@@ -27,6 +28,25 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - [%(name)s] %(message)s'
 )
 logger = logging.getLogger("FlowManager")
+
+# Prometheus metrics - exported by flow manager
+udp_jitter_gauge = Gauge(
+    'flowmanager_udp_jitter_ms',
+    'UDP jitter calculated by flow manager (used for control decisions)',
+    ['service', 'target_host']
+)
+
+tcp_jitter_gauge = Gauge(
+    'flowmanager_tcp_jitter_ms',
+    'TCP jitter calculated by flow manager (monitoring only)',
+    ['service', 'target_host']
+)
+
+bandwidth_limit_gauge = Gauge(
+    'flowmanager_bandwidth_limit_mbps',
+    'Current bandwidth limit enforced by flow manager',
+    ['deployment', 'namespace']
+)
 
 
 class MetricsClient:
@@ -182,6 +202,18 @@ class BandwidthController:
                         'severity': severity
                     }
                     
+                    # Export jitter metrics used for control decisions
+                    if app.protocol.upper() == 'UDP':
+                        udp_jitter_gauge.labels(
+                            service=app.name,
+                            target_host=app.service
+                        ).set(jitter)
+                    elif app.protocol.upper() == 'TCP':
+                        tcp_jitter_gauge.labels(
+                            service=app.name,
+                            target_host=app.service
+                        ).set(jitter)
+                    
                     status = "VIOLATION" if violation else "OK"
                     logger.info(f"  {app.name}: latency={latency:.2f}ms, jitter={jitter:.3f}ms "
                                f"(threshold={app.max_jitter_ms}ms) [{status}]")
@@ -207,13 +239,16 @@ class BandwidthController:
         - If violation: Decrease by 20% (multiplicative decrease)
         - If stable: Increase by 10 Mbps (additive increase)
         
+        Only UDP apps are used for bandwidth control decisions (real-time traffic)
+        TCP apps are monitored but don't trigger throttling
+        
         Returns: {'action': 'throttle'|'release'|'maintain', 'reason': str, 'reduction_percent': float}
         """
         
-        # Find worst violation (highest priority app that violates SLA)
+        # Find worst violation among UDP apps only (highest priority UDP app that violates SLA)
         worst_violation = None
         for state in app_states.values():
-            if state['violation']:
+            if state['violation'] and state['app'].protocol.upper() == 'UDP':
                 if worst_violation is None or state['app'].priority > worst_violation['app'].priority:
                     worst_violation = state
         
@@ -226,12 +261,14 @@ class BandwidthController:
                 'reduction_percent': 0.20  # 20% reduction for safety
             }
         
-        # Check if all apps are performing well (stable condition)
+        # Check if all UDP apps are performing well (stable condition)
         # Consider stable if jitter < 50% of threshold
+        # Only check UDP apps for control decisions
+        udp_states = [state for state in app_states.values() if state['app'].protocol.upper() == 'UDP']
         all_stable = all(
             state['jitter'] < (state['app'].max_jitter_ms * 0.5)
-            for state in app_states.values()
-        )
+            for state in udp_states
+        ) if udp_states else False
         
         if all_stable:
             # ASYMMETRIC AIMD: Additive Increase (10 Mbps)
@@ -300,6 +337,12 @@ class BandwidthController:
                     else:
                         logger.info(f"  {target.deployment}: {current_bw}M -> {new_bw}M ({delta:+d}M, +10M additive)")
                     self.current_bandwidths[target.deployment] = new_bw
+                    
+                    # Export bandwidth limit metric
+                    bandwidth_limit_gauge.labels(
+                        deployment=target.deployment,
+                        namespace=target.namespace
+                    ).set(new_bw)
             else:
                 logger.info(f"  {target.deployment}: At limit ({new_bw}M)")
     
@@ -385,6 +428,11 @@ def main():
     config_path = os.getenv('CONFIG_PATH', '/etc/flowmanager/critical-apps.yaml')
     
     try:
+        # Start Prometheus metrics server
+        metrics_port = int(os.getenv('METRICS_PORT', '8001'))
+        start_http_server(metrics_port)
+        logger.info(f"Started Prometheus metrics server on port {metrics_port}")
+        
         # Load configuration
         config = ConfigLoader.load(config_path)
         

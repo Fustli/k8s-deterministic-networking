@@ -90,13 +90,13 @@ data:
               node: kube-worker-2
               node_role: worker
 
-      # Bandwidth Exporter (Flow Manager metrics)
-      - job_name: 'bandwidth-exporter'
+      # Flow Manager metrics (control decision jitter values)
+      - job_name: 'flow-manager'
         static_configs:
           - targets:
-            - 'bandwidth-exporter.kube-system:8000'
+            - 'flow-manager-metrics.kube-system:8001'
             labels:
-              job: bandwidth-exporter
+              job: flow-manager
               app: flow-manager
 
       # Node Exporter (if available)

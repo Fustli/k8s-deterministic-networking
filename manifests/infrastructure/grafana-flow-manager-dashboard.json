@@ -41,7 +41,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "UDP Jitter for robot-control service. SLA: <5ms. Red threshold line indicates violation.",
+      "description": "UDP Jitter for robot-control service. SLA: <0.3ms. Red threshold line indicates violation.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -79,9 +79,9 @@
               "mode": "line+area"
             }
           },
-          "decimals": 2,
+          "decimals": 3,
           "mappings": [],
-          "max": 20,
+          "max": 0.36,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -92,11 +92,11 @@
               },
               {
                 "color": "yellow",
-                "value": 3
+                "value": 0.25
               },
               {
                 "color": "red",
-                "value": 5
+                "value": 0.3
               }
             ]
           },
@@ -136,28 +136,15 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "flowmanager_udp_jitter_ms{service=\"robot-control\"}",
+          "expr": "flowmanager_udp_jitter_ms{service=\"robot-control\",job=\"flow-manager\"}",
           "hide": false,
           "instant": false,
-          "legendFormat": "UDP Jitter (Active Probe)",
+          "legendFormat": "UDP Jitter (Flow Manager Control)",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(hubble_flows_processed_total{destination=~\".*robot-control.*\"}[1m])) by (le)) * 1000",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Hubble Flow Latency P99",
-          "range": true,
-          "refId": "B"
         }
       ],
-      "title": "Panel 1: Robot Control UDP Jitter (SLA: <5ms)",
+      "title": "Panel 1: Robot Control UDP Jitter (SLA: <0.3ms)",
       "type": "timeseries"
     },
     {
@@ -341,7 +328,7 @@
           },
           "decimals": 0,
           "mappings": [],
-          "max": 1100,
+          "max": 100,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -352,15 +339,15 @@
               },
               {
                 "color": "orange",
-                "value": 100
+                "value": 20
               },
               {
                 "color": "yellow",
-                "value": 300
+                "value": 50
               },
               {
                 "color": "green",
-                "value": 700
+                "value": 80
               }
             ]
           },
@@ -459,7 +446,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "kubernetes_deployment_bandwidth_limit_mbps{deployment=\"telemetry-upload-deployment\"}",
+          "expr": "flowmanager_bandwidth_limit_mbps{deployment=\"telemetry-upload-deployment\",job=\"flow-manager\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "Best-Effort BW Limit",
@@ -485,10 +472,10 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "1000",
+          "expr": "80",
           "hide": false,
           "instant": false,
-          "legendFormat": "MAX_BW",
+          "legendFormat": "MAX_BW (80M)",
           "range": true,
           "refId": "C"
         }
@@ -496,376 +483,7 @@
       "title": "Panel 3: Best-Effort Bandwidth Limit (Controller Action)",
       "type": "timeseries"
     },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Actual throughput of best-effort (noise) traffic. Compare with Panel 3 to see if throttling is effective.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Throughput (Mbps)",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "decimals": 1,
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "Mbps"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Telemetry Upload"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ERP Dashboard"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 10
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "maxHeight": 600,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "flowmanager_best_effort_throughput_mbps{deployment=\"telemetry-upload-deployment\"}",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Telemetry Upload",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "flowmanager_best_effort_throughput_mbps{deployment=\"erp-dashboard-deployment\"}",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "ERP Dashboard",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "Panel 4: Best-Effort Actual Throughput (Noise)",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 18
-      },
-      "id": 102,
-      "panels": [],
-      "title": "System Health & Cilium Metrics",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Cilium agent and Hubble flow processing metrics",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 19
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "maxHeight": 600,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(hubble_flows_processed_total[1m])) by (type)",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "{{type}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Hubble Flow Processing Rate",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Cilium bandwidth manager enforcement statistics",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 19
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "maxHeight": 600,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(cilium_bpf_syscall_duration_seconds_count[1m])) by (operation)",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "BPF {{operation}}",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(cilium_drop_count_total[1m])) by (reason)",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Drop: {{reason}}",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "Cilium eBPF Operations & Drops",
-      "type": "timeseries"
-    },
+
     {
       "datasource": {
         "type": "prometheus",
@@ -895,7 +513,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 26
+        "y": 18
       },
       "id": 7,
       "options": {
@@ -923,7 +541,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "kubernetes_deployment_bandwidth_limit_mbps{deployment=\"telemetry-upload-deployment\"}",
+          "expr": "flowmanager_bandwidth_limit_mbps{deployment=\"telemetry-upload-deployment\",job=\"flow-manager\"}",
           "hide": false,
           "instant": true,
           "legendFormat": "Current BW Limit (Mbps)",
@@ -945,7 +563,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "max": 20,
+          "max": 1,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -956,11 +574,11 @@
               },
               {
                 "color": "yellow",
-                "value": 3
+                "value": 0.15
               },
               {
                 "color": "red",
-                "value": 5
+                "value": 0.2
               }
             ]
           },
@@ -972,7 +590,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 26
+        "y": 18
       },
       "id": 8,
       "options": {
@@ -1000,10 +618,10 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "flowmanager_udp_jitter_ms{service=\"robot-control\"}",
+          "expr": "flowmanager_udp_jitter_ms{service=\"robot-control\",job=\"flow-manager\"}",
           "hide": false,
           "instant": true,
-          "legendFormat": "UDP Jitter",
+          "legendFormat": "Robot Control UDP Jitter",
           "range": false,
           "refId": "A"
         }
@@ -1048,7 +666,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 26
+        "y": 18
       },
       "id": 9,
       "options": {
@@ -1135,7 +753,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 26
+        "y": 18
       },
       "id": 10,
       "options": {

@@ -59,7 +59,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
-          pip install --no-cache-dir kubernetes requests pyyaml
+          pip install --no-cache-dir kubernetes requests pyyaml prometheus_client
           python /app/flow_manager.py
         env:
         # --- Config Path ---
@@ -68,6 +68,13 @@ spec:
         # --- Network Probe Service ---
         - name: PROBE_SERVICE
           value: "network-probe-svc.default.svc.cluster.local:9090"
+        # --- Metrics Port ---
+        - name: METRICS_PORT
+          value: "8001"
+        ports:
+        - containerPort: 8001
+          name: metrics
+          protocol: TCP
         volumeMounts:
         - name: script-volume
           mountPath: /app
@@ -80,3 +87,20 @@ spec:
       - name: config-volume
         configMap:
           name: critical-apps-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flow-manager-metrics
+  namespace: kube-system
+  labels:
+    app: flow-manager
+spec:
+  selector:
+    app: flow-manager
+  ports:
+  - port: 8001
+    targetPort: 8001
+    protocol: TCP
+    name: metrics
+  type: ClusterIP
