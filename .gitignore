@@ -240,7 +240,5 @@ debug_logs/
 local_credentials.txt
 
 # Local documentation (for learning, not for GitHub)
-LEARNING_GUIDE.md
-CLEANUP_SUMMARY.md
-WIKI.md
+docs/local/
 

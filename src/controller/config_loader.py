@@ -66,6 +66,14 @@ class ConfigLoader:
                 config = yaml.safe_load(f)
             
             logger.info(f"Loaded configuration from {config_path}")
+            
+            # Handle Kubernetes ConfigMap format (data.critical-apps.yaml)
+            if 'apiVersion' in config and 'data' in config:
+                # Extract embedded YAML from ConfigMap
+                embedded_yaml = config['data'].get('critical-apps.yaml', '')
+                config = yaml.safe_load(embedded_yaml)
+                logger.info("Parsed embedded config from Kubernetes ConfigMap")
+            
             return ConfigLoader._parse_config(config)
             
         except FileNotFoundError:

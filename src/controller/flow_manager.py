@@ -20,8 +20,13 @@ from kubernetes import client, config as k8s_config
 from prometheus_client import start_http_server, Gauge
 
 # Import config loader
-sys.path.insert(0, '/app')
-from config_loader import ConfigLoader, SystemConfig, CriticalAppConfig
+# Add current directory to path for local imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from config_loader import ConfigLoader, SystemConfig, CriticalAppConfig
+except ImportError:
+    sys.path.insert(0, '/app')
+    from config_loader import ConfigLoader, SystemConfig, CriticalAppConfig
 
 logging.basicConfig(
     level=logging.INFO,
@@ -132,8 +137,9 @@ class BandwidthController:
     Monitors all critical apps and throttles best-effort deployments
     """
     
-    def __init__(self, config: SystemConfig):
+    def __init__(self, config: SystemConfig, monitor_only: bool = False):
         self.config = config
+        self.monitor_only = monitor_only
         self.metrics_client = MetricsClient(
             probe_service=os.getenv('PROBE_SERVICE', 'network-probe-svc.default.svc.cluster.local:9090'),
             window_size=config.control.window_size
@@ -150,20 +156,25 @@ class BandwidthController:
         self.apps_v1 = client.AppsV1Api()
         
         # Current bandwidth state (per best-effort deployment)
+        # None/0 means unrestricted - show as max_bandwidth (1000) in metrics
         self.current_bandwidths = {}
         for target in config.best_effort_targets:
             bw = self._get_current_bandwidth(target.deployment, target.namespace)
-            self.current_bandwidths[target.deployment] = bw if bw else target.initial_bandwidth
+            # If no limit set, use max_bandwidth to indicate "unrestricted"
+            self.current_bandwidths[target.deployment] = bw if bw else config.control.max_bandwidth
         
         logger.info(f"Controller initialized with {len(config.critical_apps)} critical apps")
         logger.info(f"Initial bandwidths: {self.current_bandwidths}")
     
     def _get_current_bandwidth(self, deployment: str, namespace: str) -> Optional[int]:
-        """Read current bandwidth annotation from deployment"""
+        """Read current bandwidth annotation from deployment. Returns None if no limit set."""
         try:
             dep = self.apps_v1.read_namespaced_deployment(deployment, namespace)
             annotations = dep.spec.template.metadata.annotations or {}
-            bw_str = annotations.get('kubernetes.io/egress-bandwidth', '0M')
+            bw_str = annotations.get('kubernetes.io/egress-bandwidth')
+            if not bw_str:
+                logger.info(f"  {deployment}: NO bandwidth limit (unrestricted)")
+                return None  # No limit set
             return int(bw_str.replace('M', '').replace('m', '').replace('G', '000').replace('g', '000'))
         except Exception as e:
             logger.warning(f"Failed to read bandwidth for {deployment}: {e}")
@@ -297,6 +308,18 @@ class BandwidthController:
         reason = decision['reason']
         reduction_percent = decision['reduction_percent']
         
+        # In monitor-only mode, just log the decision but still export bandwidth metric
+        if self.monitor_only:
+            logger.info(f"[MONITOR-ONLY] Decision: {action.upper()} - {reason}")
+            logger.info(f"[MONITOR-ONLY] Bandwidth NOT changed (monitor-only mode)")
+            # Still export current bandwidth limits for Grafana
+            for target in self.config.best_effort_targets:
+                bandwidth_limit_gauge.labels(
+                    deployment=target.deployment,
+                    namespace=target.namespace
+                ).set(self.current_bandwidths[target.deployment])
+            return
+        
         logger.info(f"Decision: {action.upper()} - {reason}")
         
         if action == 'maintain':
@@ -425,7 +448,21 @@ def calculate_bandwidth_limit(current_limit_mbps: int, jitter_ms: float, through
 
 def main():
     """Entry point"""
-    config_path = os.getenv('CONFIG_PATH', '/etc/flowmanager/critical-apps.yaml')
+    # Auto-detect config path
+    config_path = os.getenv('CONFIG_PATH')
+    if not config_path: 
+        # Check for local development config
+        local_config = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            'manifests', 'control', 'critical-apps-config.yaml'
+        )
+        if os.path.exists(local_config):
+            config_path = local_config
+        else:
+            config_path = '/etc/flowmanager/critical-apps.yaml'
+    
+    # Check for monitor-only mode
+    mode = os.getenv('FLOW_MANAGER_MODE', 'full')
     
     try:
         # Start Prometheus metrics server
@@ -444,8 +481,13 @@ def main():
         for app in config.critical_apps:
             logger.info(f"  - {app.name}: max_jitter={app.max_jitter_ms}ms (priority={app.priority})")
         
+        if mode == 'monitor-only':
+            logger.warning("=" * 50)
+            logger.warning("MONITOR-ONLY MODE: Bandwidth will NOT be changed")
+            logger.warning("=" * 50)
+        
         # Start controller
-        controller = BandwidthController(config)
+        controller = BandwidthController(config, monitor_only=(mode == 'monitor-only'))
         controller.control_loop()
         
     except KeyboardInterrupt:

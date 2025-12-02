@@ -106,7 +106,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 24,
         "x": 0,
         "y": 1
       },
@@ -145,129 +145,6 @@
         }
       ],
       "title": "Panel 1: Robot Control UDP Jitter (SLA: <0.3ms)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "TCP throughput for safety-scanner service. SLA: >50Mbps guaranteed.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Throughput (Mbps)",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line+area"
-            }
-          },
-          "decimals": 1,
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 100
-              }
-            ]
-          },
-          "unit": "Mbps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 1
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "mean",
-            "min"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "maxHeight": 600,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "flowmanager_tcp_throughput_mbps{service=\"safety-scanner\"}",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "TCP Throughput (Active Probe)",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "50",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "SLA Threshold (50 Mbps)",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "Panel 2: Safety Scanner TCP Throughput (SLA: >50Mbps)",
       "type": "timeseries"
     },
     {
@@ -328,7 +205,7 @@
           },
           "decimals": 0,
           "mappings": [],
-          "max": 100,
+          "max": 120,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -386,7 +263,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "MAX_BW"
+              "options": "MAX_BW (100M)"
             },
             "properties": [
               {
@@ -416,7 +293,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 24,
         "x": 0,
         "y": 10
       },
@@ -472,18 +349,17 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "80",
+          "expr": "100",
           "hide": false,
           "instant": false,
-          "legendFormat": "MAX_BW (80M)",
+          "legendFormat": "MAX_BW (100M)",
           "range": true,
           "refId": "C"
         }
       ],
-      "title": "Panel 3: Best-Effort Bandwidth Limit (Controller Action)",
+      "title": "Panel 2: Best-Effort Bandwidth Limit (Controller Action)",
       "type": "timeseries"
     },
-
     {
       "datasource": {
         "type": "prometheus",
@@ -511,7 +387,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 8,
         "x": 0,
         "y": 18
       },
@@ -574,11 +450,11 @@
               },
               {
                 "color": "yellow",
-                "value": 0.15
+                "value": 0.25
               },
               {
                 "color": "red",
-                "value": 0.2
+                "value": 0.3
               }
             ]
           },
@@ -588,8 +464,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
+        "w": 8,
+        "x": 8,
         "y": 18
       },
       "id": 8,
@@ -639,82 +515,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 100
-              }
-            ]
-          },
-          "unit": "Mbps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 18
-      },
-      "id": 9,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(hubble_flows_processed_total{destination=~\".*safety-scanner.*\"}[1m])) * 8 / 1000000",
-          "hide": false,
-          "instant": true,
-          "legendFormat": "TCP Throughput",
-          "range": false,
-          "refId": "A"
-        }
-      ],
-      "title": "Safety Scanner Throughput",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
           "mappings": [
             {
               "options": {
@@ -751,8 +551,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 8,
+        "x": 16,
         "y": 18
       },
       "id": 10,
@@ -781,7 +581,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "up{job=\"bandwidth-exporter\"}",
+          "expr": "up{job=\"flow-manager\"}",
           "hide": false,
           "instant": true,
           "legendFormat": "Flow Manager",

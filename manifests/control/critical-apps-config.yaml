@@ -14,7 +14,7 @@ data:
         service: robot-control-svc.default.svc.cluster.local
         port: 5201
         protocol: UDP  # UDP is primary for real-time control
-        max_jitter_ms: 1.0
+        max_jitter_ms: 0.3
         max_latency_ms: 10.0  # Optional hard latency cap
         priority: 100  # Highest priority
         
@@ -23,7 +23,7 @@ data:
         service: safety-scanner-svc.default.svc.cluster.local
         port: 5202
         protocol: TCP  # TCP for safety validation messages
-        max_jitter_ms: 2.0
+        max_jitter_ms: 0.3
         max_latency_ms: 20.0
         priority: 90
     

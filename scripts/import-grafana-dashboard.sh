@@ -22,7 +22,7 @@ fi
 echo "Waiting for Grafana to be ready..."
 for i in {1..30}; do
     if curl -s "$GRAFANA_URL/api/health" > /dev/null 2>&1; then
-        echo "✅ Grafana is ready"
+        echo "Grafana is ready"
         break
     fi
     sleep 2
@@ -42,16 +42,16 @@ RESPONSE=$(echo "$DASHBOARD_PAYLOAD" | curl -s -X POST \
 # Check response
 if echo "$RESPONSE" | grep -q '"status":"success"'; then
     DASHBOARD_URL=$(echo "$RESPONSE" | jq -r '.url')
-    echo "✅ Dashboard imported successfully!"
+    echo "Dashboard imported successfully!"
     echo ""
-    echo "📊 Dashboard URL: http://localhost:3000$DASHBOARD_URL"
+    echo "Dashboard URL: http://localhost:3000$DASHBOARD_URL"
     echo ""
     echo "Key updates:"
     echo "  • Robot Control Jitter: 0-1ms range (was 0-20ms)"
     echo "  • Thresholds: Yellow 0.15ms, Red 0.2ms"
     echo "  • 3 decimal precision for sub-millisecond accuracy"
 else
-    echo "❌ Failed to import dashboard"
+    echo "Failed to import dashboard"
     echo "Response: $RESPONSE"
     exit 1
 fi
