@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.ml_controller import BandwidthController
+from scripts.flow_manager import BandwidthController
 
 
 def test_adjust_bandwidth_decrease():

@@ -1,0 +1,19 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: safety-scanner-allow-critical
+spec:
+  description: "Critical Policy for Safety Scanner (TCP High Bandwidth)"
+  endpointSelector:
+    matchLabels:
+      app: safety-scanner
+  
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "5202"
+        protocol: TCP
+  
+  egress:
+  - toEndpoints:
+    - matchLabels: {}

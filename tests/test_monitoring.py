@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-ML Controller Monitoring & Alerting Test Suite
+Flow Manager Monitoring & Alerting Test Suite
 
 Tests all aspects of the monitoring and alerting setup including:
 - Prometheus metrics collection
@@ -57,9 +57,9 @@ class MonitoringSetupTest(unittest.TestCase):
                 plural="servicemonitors"
             )
             
-            # Look for ML Controller ServiceMonitor
+            # Look for Flow Manager ServiceMonitor
             sm_names = [sm['metadata']['name'] for sm in service_monitors['items']]
-            self.assertIn('ml-controller-ha-monitor', sm_names)
+            self.assertIn('flow-manager-ha-monitor', sm_names)
             
         except Exception as e:
             self.skipTest(f"ServiceMonitor check failed (Prometheus operator may not be installed): {e}")
@@ -75,19 +75,19 @@ class MonitoringSetupTest(unittest.TestCase):
                 plural="prometheusrules"
             )
             
-            # Look for ML Controller alerts
+            # Look for Flow Manager alerts
             rule_names = [rule['metadata']['name'] for rule in prometheus_rules['items']]
-            self.assertIn('ml-controller-alerts', rule_names)
+            self.assertIn('flow-manager-alerts', rule_names)
             
             # Check specific alert rules
-            ml_controller_rules = next(
+            flow_manager_rules = next(
                 (rule for rule in prometheus_rules['items'] 
-                 if rule['metadata']['name'] == 'ml-controller-alerts'), 
+                 if rule['metadata']['name'] == 'flow-manager-alerts'), 
                 None
             )
             
-            if ml_controller_rules:
-                groups = ml_controller_rules['spec']['groups']
+            if flow_manager_rules:
+                groups = flow_manager_rules['spec']['groups']
                 self.assertTrue(len(groups) > 0, "Should have alert rule groups")
                 
                 # Check for critical alerts
@@ -103,12 +103,12 @@ class MonitoringSetupTest(unittest.TestCase):
         try:
             core_api = client.CoreV1Api()
             configmap = core_api.read_namespaced_config_map(
-                name="ml-controller-grafana-dashboard",
+                name="flow-manager-grafana-dashboard",
                 namespace=self.monitoring_namespace
             )
             
             # Check dashboard content
-            dashboard_data = configmap.data.get('ml-controller-dashboard.json')
+            dashboard_data = configmap.data.get('flow-manager-dashboard.json')
             self.assertIsNotNone(dashboard_data, "Dashboard JSON should be present")
             
             # Parse and validate dashboard structure
@@ -128,7 +128,7 @@ class MonitoringSetupTest(unittest.TestCase):
             self.fail(f"Failed to validate Grafana dashboard: {e}")
 
 class MetricsEndpointTest(unittest.TestCase):
-    """Test ML Controller metrics endpoints"""
+    """Test Flow Manager metrics endpoints"""
     
     def setUp(self):
         """Setup test environment"""
@@ -143,15 +143,15 @@ class MetricsEndpointTest(unittest.TestCase):
     
     def test_health_endpoint_accessibility(self):
         """Test that health endpoints are accessible"""
-        # Get ML Controller pods
+        # Get Flow Manager pods
         try:
             pods = self.core_api.list_namespaced_pod(
                 namespace=self.controller_namespace,
-                label_selector="app=ml-controller-ha"
+                label_selector="app=flow-manager-ha"
             )
             
             if len(pods.items) == 0:
-                self.skipTest("No ML Controller HA pods found")
+                self.skipTest("No Flow Manager HA pods found")
             
             # Test health endpoint on first available pod
             pod_name = pods.items[0].metadata.name
@@ -182,11 +182,11 @@ class MetricsEndpointTest(unittest.TestCase):
         try:
             pods = self.core_api.list_namespaced_pod(
                 namespace=self.controller_namespace,
-                label_selector="app=ml-controller-ha"
+                label_selector="app=flow-manager-ha"
             )
             
             if len(pods.items) == 0:
-                self.skipTest("No ML Controller HA pods found")
+                self.skipTest("No Flow Manager HA pods found")
             
             pod_name = pods.items[0].metadata.name
             
@@ -201,13 +201,13 @@ class MetricsEndpointTest(unittest.TestCase):
             
             metrics_output = result.stdout
             
-            # Check for expected ML Controller metrics
+            # Check for expected Flow Manager metrics
             expected_metrics = [
-                "ml_controller_is_leader",
-                "ml_controller_control_loop_running", 
-                "ml_controller_metrics_healthy",
-                "ml_controller_current_bandwidth_mbps",
-                "ml_controller_uptime_seconds"
+                "flow_manager_is_leader",
+                "flow_manager_control_loop_running", 
+                "flow_manager_metrics_healthy",
+                "flow_manager_current_bandwidth_mbps",
+                "flow_manager_uptime_seconds"
             ]
             
             for metric in expected_metrics:
@@ -229,7 +229,7 @@ class AlertRuleValidationTest(unittest.TestCase):
     
     def setUp(self):
         """Setup test environment"""
-        self.alert_rules_file = '/home/ubuntu/k8s-deterministic-networking/k8s/infrastructure/prometheus-ml-controller-alerts.yaml'
+        self.alert_rules_file = '/home/ubuntu/k8s-deterministic-networking/k8s/infrastructure/prometheus-flow-manager-alerts.yaml'
     
     def test_alert_rules_syntax(self):
         """Test that alert rules have valid YAML syntax"""
@@ -293,7 +293,7 @@ class NotificationConfigTest(unittest.TestCase):
     
     def setUp(self):
         """Setup test environment"""
-        self.alertmanager_config_file = '/home/ubuntu/k8s-deterministic-networking/k8s/infrastructure/alertmanager-ml-controller-config.yaml'
+        self.alertmanager_config_file = '/home/ubuntu/k8s-deterministic-networking/k8s/infrastructure/alertmanager-flow-manager-config.yaml'
     
     def test_alertmanager_config_syntax(self):
         """Test AlertManager configuration syntax"""
@@ -305,7 +305,7 @@ class NotificationConfigTest(unittest.TestCase):
             alertmanager_config = None
             for config in configs:
                 if (config.get('kind') == 'ConfigMap' and 
-                    config.get('metadata', {}).get('name') == 'alertmanager-ml-controller-config'):
+                    config.get('metadata', {}).get('name') == 'alertmanager-flow-manager-config'):
                     alertmanager_config = config
                     break
             
@@ -333,7 +333,7 @@ class NotificationConfigTest(unittest.TestCase):
         alertmanager_config = next(
             (c for c in configs 
              if c.get('kind') == 'ConfigMap' and 
-             c.get('metadata', {}).get('name') == 'alertmanager-ml-controller-config'),
+             c.get('metadata', {}).get('name') == 'alertmanager-flow-manager-config'),
             None
         )
         
@@ -344,10 +344,10 @@ class NotificationConfigTest(unittest.TestCase):
         receiver_names = [r['name'] for r in receivers]
         
         expected_receivers = [
-            'critical-ml-controller',
-            'high-ml-controller', 
-            'medium-ml-controller',
-            'info-ml-controller'
+            'critical-flow-manager',
+            'high-flow-manager', 
+            'medium-flow-manager',
+            'info-flow-manager'
         ]
         
         for expected in expected_receivers:
@@ -355,7 +355,7 @@ class NotificationConfigTest(unittest.TestCase):
 
 def run_monitoring_tests():
     """Run all monitoring test suites"""
-    print("🧪 Running ML Controller Monitoring Test Suite...")
+    print("🧪 Running Flow Manager Monitoring Test Suite...")
     print("=" * 60)
     
     # Create test suites

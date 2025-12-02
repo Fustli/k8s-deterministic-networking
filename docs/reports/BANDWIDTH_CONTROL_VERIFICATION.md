@@ -8,7 +8,7 @@
 
 ## 🎯 Executive Summary
 
-The ML Controller's bandwidth control mechanism has been **successfully verified and is working correctly**. After fixing the Hubble metrics connectivity issue, the system now:
+The Flow Manager's bandwidth control mechanism has been **successfully verified and is working correctly**. After fixing the Hubble metrics connectivity issue, the system now:
 
 - ✅ Dynamically adjusts bandwidth based on jitter thresholds
 - ✅ Respects minimum (10M) and maximum (1000M) bandwidth limits  

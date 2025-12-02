@@ -14,14 +14,14 @@ ML-based bandwidth controller for Kubernetes protecting critical workloads (robo
 ## Architecture
 
 ```
-Active Probes (TCP+UDP) → ML Controller → K8s Annotation Patch → Cilium eBPF Enforcement
+Active Probes (TCP+UDP) → Flow Manager → K8s Annotation Patch → Cilium eBPF Enforcement
 ```
 
 **Key insight**: Bandwidth control uses `kubernetes.io/egress-bandwidth` annotation patching (not CiliumNetworkPolicy) because Cilium v1.18 doesn't support direct policy bandwidth fields.
 
 ## Critical Code Patterns
 
-### Controller Logic (controller/ml_controller.py) ← CANONICAL LOCATION
+### Controller Logic (controller/flow_manager.py) ← CANONICAL LOCATION
 - **Jitter calculation**: Uses IQR (Q3-Q1) from probe history, not standard deviation
 - **Asymmetric control**: Fast throttle down (`STEP_DOWN=100`), slow release up (`STEP_UP=10`)
 - **Dual protocol probing**: Measures both TCP handshake and UDP send latency; uses `max()` for conservative control
@@ -42,7 +42,7 @@ labels:
   priority: best-effort # Throttleable (telemetry-upload, erp-dashboard)
 ```
 
-### Network Policy Pattern (k8s/policies/)
+### Network Policy Pattern (manifests/policies/)
 - Use `CiliumNetworkPolicy` (not standard NetworkPolicy)
 - L7 visibility policies enable Hubble HTTP metrics for dashboards (not control loop)
 
@@ -50,10 +50,10 @@ labels:
 
 | Directory | Purpose |
 |-----------|---------|
-| `controller/` | Python ML controller (canonical location) |
-| `k8s/applications/` | Workload deployments with priority labels |
-| `k8s/infrastructure/` | Prometheus, Grafana monitoring stack |
-| `k8s/policies/` | CiliumNetworkPolicy definitions |
+| `controller/` | Python flow manager (canonical location) |
+| `manifests/applications/` | Workload deployments with priority labels |
+| `manifests/infrastructure/` | Prometheus, Grafana monitoring stack |
+| `manifests/policies/` | CiliumNetworkPolicy definitions |
 | `scripts/` | Test and deployment automation |
 | `tests/` | Pytest tests (note: some have stale imports referencing `scripts/`) |
 
@@ -64,10 +64,10 @@ labels:
 pytest tests/ -v --cov=controller
 
 # HTTP-based traffic test (baseline → noise → validation phases)
-./scripts/test-ml-controller-http.sh
+./scripts/test-flow-manager-http.sh
 
 # Watch controller behavior
-kubectl logs -n kube-system -l app=ml-controller -f
+kubectl logs -n kube-system -l app=flow-manager -f
 
 # Check current bandwidth annotation
 kubectl get deployment telemetry-upload-deployment -o jsonpath='{.spec.template.metadata.annotations}'
@@ -84,11 +84,11 @@ kubectl get deployment telemetry-upload-deployment -o jsonpath='{.spec.template.
 2. **Annotation format**: Must be `"100M"` (string with M suffix), not numeric
 3. **Controller namespace**: Runs in `kube-system`, watches `default` namespace deployments
 4. **Probe failures**: Handle gracefully with fallback jitter values, don't crash the control loop
-5. **Test imports**: Some tests have stale imports from `scripts/ml_controller.py` - canonical location is `controller/ml_controller.py`
+5. **Test imports**: Some tests have stale imports from `scripts/flow_manager.py` - canonical location is `controller/flow_manager.py`
 
 ## Configuration
 
-Environment variables (set in `k8s/applications/ml-controller.yaml`):
+Environment variables (set in `manifests/control/flow-manager.yaml`):
 - `TARGET_HOST`: Service DNS to probe (default: `robot-control-svc.default.svc.cluster.local`)
 - `TARGET_JITTER_MS`: Threshold triggering throttle (default: `3.0`)
 - `MIN_BW/MAX_BW`: Bandwidth limits in Mbps (default: `10`/`1000`)

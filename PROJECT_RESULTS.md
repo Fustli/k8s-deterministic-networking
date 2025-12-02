@@ -17,7 +17,7 @@ This project implements an intelligent bandwidth management system for Kubernete
 
 ### Key Components
 
-1. **ML Controller (Python)**
+1. **Flow Manager (Python)**
    - Monitors application-level latency and jitter using Prometheus metrics
    - Implements IQR (Interquartile Range) jitter calculation
    - Uses EWMA (Exponential Weighted Moving Average) for signal smoothing
@@ -56,7 +56,7 @@ Cooldown Period:   30 seconds between adjustments
 ```
 
 ### Controller Behavior
-The ML controller continuously monitors critical application metrics:
+The flow manager continuously monitors critical application metrics:
 - **When jitter/latency are good:** Gradually increases bandwidth for best-effort apps
 - **When jitter spikes:** Aggressively throttles best-effort apps to protect critical traffic
 - **When latency high but jitter low:** Gentle throttling (indicates distance, not congestion)
@@ -146,7 +146,7 @@ Baseline drops: ~30 packets/second
 **Lesson:** Don't use raw drop rate as the primary control signal. Focus on application-level metrics (latency, jitter) for QoS decisions.
 
 ### 4. Controller Stability
-The ML controller successfully maintains stability through:
+The flow manager successfully maintains stability through:
 - **EWMA smoothing (α=0.7):** Filters out measurement noise
 - **Cooldown periods (30s):** Prevents rapid oscillations
 - **Hysteresis control:** Tracks change direction to avoid flip-flopping
@@ -158,7 +158,7 @@ The ML controller successfully maintains stability through:
 
 ## Performance Comparison
 
-| Metric | Original (No QoS) | With L4 Controller | With ML Controller |
+| Metric | Original (No QoS) | With L4 Controller | With Flow Manager |
 |--------|-------------------|-------------------|-------------------|
 | **Jitter** | 6.5 ms | 1.3 ms (pure eBPF) | 2.9 ms (with L7) |
 | **P95 Latency** | ~15 ms | 3.2 ms | 8.7 ms |
@@ -216,7 +216,7 @@ Custom dashboard with 9 panels:
 
 ## Configuration
 
-### ML Controller Environment Variables
+### Flow Manager Environment Variables
 ```yaml
 PROMETHEUS_URL: "http://prometheus.monitoring:9090"
 TARGET_JITTER_MS: "5.0"           # Maximum acceptable jitter
@@ -278,7 +278,7 @@ hubble:
             │                   │
             ▼                   ▼
     ┌──────────────┐    ┌──────────────┐
-    │ ML Controller│    │   Grafana    │
+    │ Flow Manager│    │   Grafana    │
     │ - Queries    │    │ - Dashboard  │
     │ - Decides    │    │ - Alerts     │
     │ - Updates    │    └──────────────┘
@@ -361,10 +361,10 @@ kubectl apply -f k8s/infrastructure/grafana-deployment.yaml
 # Deploy network policies
 kubectl apply -f k8s/policies/
 
-# Deploy ML controller
-kubectl apply -f k8s/applications/ml_controller_rbac.yaml
-kubectl apply -f k8s/applications/ml-controller-configmap.yaml
-kubectl apply -f k8s/applications/ml-controller.yaml
+# Deploy flow manager
+kubectl apply -f k8s/applications/flow_manager_rbac.yaml
+kubectl apply -f k8s/applications/flow-manager-configmap.yaml
+kubectl apply -f k8s/applications/flow-manager.yaml
 
 # Deploy workloads
 kubectl apply -f k8s/applications/
@@ -378,8 +378,8 @@ kubectl port-forward -n monitoring svc/grafana 3000:3000
 ```
 k8s-deterministic-networking/
 ├── controller/
-│   ├── ml_controller.py          # Main ML controller
-│   └── ml_controller_l4.py       # L4-only version (experimental)
+│   ├── flow_manager.py          # Main flow manager
+│   └── flow_manager_l4.py       # L4-only version (experimental)
 ├── k8s/
 │   ├── applications/             # App deployments
 │   ├── infrastructure/           # Monitoring stack

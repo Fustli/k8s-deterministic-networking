@@ -38,7 +38,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 \input{macros} % Import macros
-\markright{Your Name (NEPTUN)} % one sided title page!!!
+\markright{Norbert Bendegúz Hasznos (DN04PZ)} % one sided title page!!!
 %--------------------------------------------------------------------
 % title page
 %--------------------------------------------------------------------
@@ -55,18 +55,18 @@
   % generate title
   \projectlaboratorytitle
  
-  \projectlaboratoryauthor{Your Name}{NEPTUN}{Specialization}{user@example.com}{Supervisor Name, PhD}{supervisor@tmit.bme.hu}{Supervisor2 Name}{supervisor2@tmit.bme.hu}
+  \projectlaboratoryauthor{Norbert Bendegúz Hasznos}{DN04PZ}{Artificial Intelligence and Data Science}{bendeguz.hasznos@gmail.com}{Markosz Maliosz, PhD}{supervisor@tmit.bme.hu}
  
  
   %\tasktitle
-  \tasktitle{Title of the project (one line)} 
+  \tasktitle{Adaptive Bandwidth Controller in Kubernetes} 
 
   %\taskdescription
   \taskdescription{Short description of the project.}
 
   % semester Arguments: #1=Semester (format: xxxx/xx , #2=I/II (without dot!))
   \begin{center}
-    \semester{2018/19}{II}
+    \semester{2025/2026}{I}
   \end{center}
   
 \end{titlepage} 
@@ -81,22 +81,87 @@
 \label{sec:introduction}
 % TODO: Write content here.
 % - Introduce Kubernetes as the de-facto standard for container orchestration.
-% - Explain the challenge of network performance isolation in shared environments.
-% - State the thesis of your paper.
+Kubernetes (K8s) is an open-source system for automating deployment, scaling, and managing container-
+ized applications. It was historically "heavy" and used for massive cloud datacenters; however, trends
+show. K8s is becoming widely adopted now in edge computing and smaller-scale environments, too. The reason behind this adoption is the flexibility, self-healing, scalability and a wide range of features
+it provides right out of the box. However, using K8S for Edge computing introduces some challenges, like
+network performance isolation. In cloud datacenters, if a video download slows down a background
+update, nobody will notice that, but in industrial settings, where real-time determinism is required, this
+"noisy neighbour" problem will be dangerous. Edge nodes often run heterogeneous workloads, which
+means safety-critical applications - like robot control loops - will share the same physical network interface
+with low-priority applications - like telemetry logging. Kubernetes, by default, does not solve this issue; it
+provides only basic Quality of Service (QoS) classes based on resource requests and limits defined in Pod
+specifications. Recent research by Yakubov and Hästbacka (2025) \cite{yakubov2025} found that while distributions like
+K3s are great for saving RAM (Random Access Memory); standard Kubernetes (via kubeadm) actually
+has superior data plane throughput and latency stability under load. This comes from the fact that kubeadm
+does not compromise the kernel-level networking stack to save binary size. This thesis solves the project
+goal of providing a "Hybrid Deterministic Network Controller". Instead of switching to a lightweight
+Kubernetes distribution, we build upon the standard Kubernetes networking stack. We solved the noisy
+neighbour problem by adding a custom closed-loop controller: a Python-based one that actively probes the
+network for congestion, and uses Cilium eBPF to dynamically throttle non-critical traffic. This provides
+that the safety-critical applications have a fast and deterministic lane, even when the network is under stress.
 % - Briefly outline the structure of the paper.
 
 \subsection{The Challenge of Multi-Tenant Networking in Kubernetes}
 \label{sec:challenges}
 % TODO: Write content here.
 % - Explain The Kubernetes Networking Model (Pods, Services, CNI).
-% - Describe the "Noisy Neighbor" Problem. Use diagrams.
-% - Discuss Quality of Service (QoS) in Networking (latency, jitter, bandwidth).
+The Kubernetes networking model fundamentally separates the application layer from the infrastructure
+layer. While this enables fast scaling, it introduces significant opacity in how the physical network resources
+are utilised.
+
+\subsection{Kubernetes Networking Model}
+\label{sec:kubernetes_networking_model}
+The Kubernetes networking model establishes a single network where every pod can communicate directly with every other pod, without the use of Network Address Translation (NAT) \cite{k8sdocs}. This is enabled via the Container Network Interface (CNI), which connects Kubernetes orchestration to the Linux networking stack.
+In a standard deployment (e.g, using default CNI plugins like Flannel or Calico), without additional configuration and tuning, the Linux kernel treats all packet flows equally. The packet scheduler
+in the kernel won’t differentiate between critical traffic (e.g., control loops for industrial robots) and non-
+critical traffic (e.g., telemetry data uploads). The kernel relies on basic queuing mechanisms like First 
+In First Out (FIFO) or CoDel (Controlled Delay), optimize for general performance, rather than strict isochronous delivery. As noted by Solber et al. (2024)\cite{solber2024}, this "best-effort" approach is sufficient for web services but introduces unacceptable non-determinism for industrial control loops.
+
+\subsection{The Noisy Neighbour Problem}
+\label{sec:noisy_neighbour_problem}
+The Kubernetes networking model enforces a "flat" network space where every pod can communicate with
+every other pod without NAT (Network Address Translation) [4]. This is achieved through the Container.
+Network Interface (CNI), which acts as the translation layer between the K8S orchestration and the under-
+lying Linux networking stack. In a standard deployment (e.g., using default CNI plugins like Flannel or
+Calico), without additional configuration or tuning, the Linux kernel treats all packet flows equally. The
+packet scheduler in the kernel won’t differentiate between critical traffic (e.g., control loops for industrial
+robots) and non-critical traffic (e.g., telemetry data uploads). The kernel relies on basic queuing mechanisms, like FIFO (First-In-First-Out. In First Out (FIFO) or CoDel (Controlled Delay), optimise for general
+performance, rather than strict isochronous. delivery. As noted by Solber et al. (2024) \cite{solber2024}, this "best-effort" approach is sufficient for web services, but introduces unacceptable non-determinism for industrial control
+loops.
+
+\subsection{Quality of Service (QoS) Misconceptions}
+
+\label{sec:qos_misconceptions}
+
+The critical problem and limitation in default K8s is the scope of its Quality of Service (QoS) classes. While K8s provides Guaranteed, Burstable, and BestEffort classes, these only govern
+CPU cycles and memory pages \cite{k8sdocs}, therefore, they do not natively isolate Network I/O or bandwidth.
+
+For an industrial edge system, the "Network Health" is not a single metric, but a combination of constraints:
+\begin{itemize}
+
+  \item Latency(ms): Time to travel from source to destination.
+
+  \item Packet Loss(percentage): Percentage of packets that fail to reach their destination.
+
+  \item Jitter(PDV)(ms): Variability in packet latency over time.
+
+  \item Throughput(Mbps): The rate of successful message delivery over a communication channel.
+
+\end{itemize}
+Standard Linux networking creates a conflict: maximizing throughput degrades jitter. Our architecture aims to solve this conflict by implementing network-aware QoS,
+which dynamically adjusts bandwidth allocations based on real-time network conditions. 
+
 
 \subsection{Enabling Technologies}
 \label{sec:enabling_technologies}
-% TODO: Write content here.
-% - Introduce eBPF and Cilium, highlighting the eBPF-based BandwidthManager.
-% - Introduce Control Theory Fundamentals (closed-loop, Proportional Controller, "cut fast, raise slow").
+Extended Berkeley Packet Filter (eBPF) is a kernel-level technology that enables developers to run sand-
+boxed programs in the kernel without modifying the kernel source code or loading additional modules. \cite{cilium}
+In the Kubernetes ecosystem, the Cilium CNI leverages eBPF to bypass the limitations imposed by
+legacy iptables rules, which are known to create bottlenecks in container networking.
+Our system is built on the Cilium Bandwidth Manager. Unlike traditional Linux traffic control mechanisms-
+anisms, Cilium implements an Earliest Departure Time (EDT) model directly at the Traffic Control (TC)
+egress hook. \cite{cilium} Instead of buffering packets in large queues (which leads to latency spikes). Something in here about something 
 
 \newpage
 %==================================================================
@@ -105,10 +170,11 @@
   \label{sec:work}
 \end{center}
 
+In this section, we talk about the design, and implementation of our controller, and the evaluation of its performance.
+
 \subsection{System Architecture}
 \label{sec:architecture}
-% TODO: Write content here.
-% - Present a high-level architecture diagram showing all components and the control loop.
+
 
 \subsection{The Adaptive Jitter Controller}
 \label{sec:controller_implementation}
@@ -136,21 +202,21 @@
 \label{sec:references}
 
 \begin{references}{9}
-\bibitem{eco} Umberto Eco, \emph{Hogyan írjunk szakdolgozatot?},
-  Kairosz Kiadó, 2000, ISBN: 9639137537.
 
-\bibitem{esterhazy} Esterházy Péter, \emph{Termelési-regény (Kisssregény),}
-  Magvető Könyvkiadó, 2004, ISBN: 9631423948.
+\bibitem{yakubov2025} Diyaz Yakubov and David Hästbacka, \emph{Comparative Analysis of Lightweight Kubernetes Distributions for Edge Computing: Performance and Resource Efficiency}, 
+  IEEE European Symposium on Service-Oriented and Cloud Computing (ESOCC), 2025. 
+  (Also available as arXiv:2504.03656).
 
-\bibitem{web} \emph{Tájékoztató a Műszaki Informatika Szak önálló
-    laboratórium tantárgyainak 2008/9. tanév I. félévi lezárásáról a
-    BME TMIT-en (VITMA367, VITMA380, VITT4353, VITT4330),}
-  \url{http://inflab.tmit.bme.hu/08o/lezar.shtml}, szerk.: Németh Felicián,
-  2008. november 5.
+\bibitem{solber2024} D. Solber, et al., \emph{Enhancing IIoT Infrastructures with Kubernetes: Advanced Edge Cluster Management},
+  IEEE International Conference on Emerging Technologies and Factory Automation (ETFA), 2024.
 
-\bibitem{wikipedia} Wikipedia contributors, \emph{Wikipedia:Academic
-    use}, Wikipedia, The Free Encyclopedia, 2011 Nov 11.  Available
-  from: \\ \url{http://en.wikipedia.org/w/index.php?title=Wikipedia:Academic\_use\&oldid=460041928}
+\bibitem{cilium} Isovalent / The Linux Foundation, \emph{Cilium Documentation: eBPF-based Networking, Security, and Observability},
+  \url{https://docs.cilium.io/en/stable/overview/intro/}, 
+  accessed: 2025.
+
+\bibitem{k8sdocs} The Kubernetes Authors, \emph{Kubernetes Documentation: Production Environment Container Runtimes}, 
+  The Linux Foundation, 2024. 
+  Available from: \\ \url{https://kubernetes.io/docs/setup/production-environment/}
 
 \end{references}
 
@@ -160,9 +226,4 @@
 Source code etc.
 
 \end{document} 
-
-%%% Local Variables: 
-%%% mode: latex 
-%%% TeX-master: t 
-%%% End:
 

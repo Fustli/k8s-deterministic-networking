@@ -264,7 +264,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
     spec:
-      serviceAccountName: ml-controller-sa
+      serviceAccountName: flow-manager-sa
       containers:
       - name: exporter
         image: python:3.11-slim

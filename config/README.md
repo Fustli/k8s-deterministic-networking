@@ -1,6 +1,6 @@
 # Configuration Directory
 
-This directory contains environment configuration files for the ML Controller.
+This directory contains environment configuration files for the Flow Manager.
 
 ## Files
 

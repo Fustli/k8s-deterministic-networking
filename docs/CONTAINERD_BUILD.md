@@ -1,6 +1,6 @@
-# Building ML Controller Image with containerd
+# Building Flow Manager Image with containerd
 
-This guide explains how to build and push the ML controller image using **containerd** and **nerdctl** instead of Docker.
+This guide explains how to build and push the Flow manager image using **containerd** and **nerdctl** instead of Docker.
 
 ## Prerequisites
 
@@ -13,25 +13,25 @@ This guide explains how to build and push the ML controller image using **contai
 
 1. **Build the image:**
 ```bash
-nerdctl build -t fustli/ml-controller:latest \
-  -f docker/ml-controller/Dockerfile \
-  docker/ml-controller
+nerdctl build -t fustli/flow-manager:latest \
+  -f docker/flow-manager/Dockerfile \
+  docker/flow-manager
 ```
 
 2. **Tag for your registry** (if not Docker Hub):
 ```bash
 # For private registry
-nerdctl tag fustli/ml-controller:latest \
-  registry.example.com/fustli/ml-controller:latest
+nerdctl tag fustli/flow-manager:latest \
+  registry.example.com/fustli/flow-manager:latest
 ```
 
 3. **Push to registry:**
 ```bash
 # Docker Hub
-nerdctl push fustli/ml-controller:latest
+nerdctl push fustli/flow-manager:latest
 
 # Private registry
-nerdctl push registry.example.com/fustli/ml-controller:latest
+nerdctl push registry.example.com/fustli/flow-manager:latest
 ```
 
 ### Option 2: Using `ctr` (containerd native CLI)
@@ -40,9 +40,9 @@ If you prefer the lower-level containerd client:
 
 ```bash
 # Build using buildkit (requires buildkit plugin)
-ctr images build --ref fustli/ml-controller:latest \
-  -f docker/ml-controller/Dockerfile \
-  docker/ml-controller
+ctr images build --ref fustli/flow-manager:latest \
+  -f docker/flow-manager/Dockerfile \
+  docker/flow-manager
 ```
 
 ### Option 3: Using `buildctl` (BuildKit directly)
@@ -51,22 +51,22 @@ For advanced users with buildkit installed:
 
 ```bash
 buildctl build --frontend dockerfile.v0 \
-  --local context=docker/ml-controller \
-  --local dockerfile=docker/ml-controller \
-  --output type=image,name=fustli/ml-controller:latest,push=true
+  --local context=docker/flow-manager \
+  --local dockerfile=docker/flow-manager \
+  --output type=image,name=fustli/flow-manager:latest,push=true
 ```
 
 ## Verify the Image
 
 ```bash
 # List images
-nerdctl images | grep ml-controller
+nerdctl images | grep flow-manager
 
 # Inspect image
-nerdctl inspect fustli/ml-controller:latest
+nerdctl inspect fustli/flow-manager:latest
 
 # Test locally (optional)
-nerdctl run --rm fustli/ml-controller:latest --help
+nerdctl run --rm fustli/flow-manager:latest --help
 ```
 
 ## Kubernetes Deployment
@@ -74,9 +74,9 @@ nerdctl run --rm fustli/ml-controller:latest --help
 Once pushed to your registry, the image is ready to use in the deployment:
 
 ```bash
-kubectl apply -f manifests/ml_controller_rbac.yaml
-kubectl apply -f manifests/ml-controller-configmap.yaml
-kubectl apply -f manifests/ml-controller.yaml
+kubectl apply -f manifests/flow_manager_rbac.yaml
+kubectl apply -f manifests/flow-manager-configmap.yaml
+kubectl apply -f manifests/flow-manager.yaml
 ```
 
 ## Image Specification
@@ -84,7 +84,7 @@ kubectl apply -f manifests/ml-controller.yaml
 - **Base image:** `python:3.11-slim`
 - **Non-root user:** `controller` (UID 1000) for security
 - **Dependencies:** kubernetes, prometheus-api-client
-- **Entry point:** `python /app/ml_controller.py`
+- **Entry point:** `python /app/flow_manager.py`
 
 ## Troubleshooting
 
@@ -95,7 +95,7 @@ kubectl apply -f manifests/ml-controller.yaml
 ```bash
 nerdctl login registry.example.com
 # Enter credentials when prompted
-nerdctl push registry.example.com/fustli/ml-controller:latest
+nerdctl push registry.example.com/fustli/flow-manager:latest
 ```
 
 ### Issue: Image size too large

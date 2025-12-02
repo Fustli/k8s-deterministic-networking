@@ -57,9 +57,9 @@ kubectl patch deployment hubble-relay -n kube-system \
 kubectl apply -f infrastructure/monitoring/prometheus-deployment.yaml
 
 # 4. Deploy controllers
-kubectl apply -f deploy/kustomize/base/ml-controller.yaml
-kubectl apply -f deploy/kustomize/base/ml-controller-configmap.yaml
-kubectl apply -f deploy/kustomize/base/ml_controller_rbac.yaml
+kubectl apply -f deploy/kustomize/base/flow-manager.yaml
+kubectl apply -f deploy/kustomize/base/flow-manager-configmap.yaml
+kubectl apply -f deploy/kustomize/base/flow_manager_rbac.yaml
 
 # 5. Deploy workloads
 kubectl apply -f deploy/kustomize/base/robot-factory-application.yaml
@@ -89,9 +89,9 @@ kubectl logs -n kube-system -l app=hubble-relay
 kubectl get deployment -n monitoring prometheus
 kubectl logs -n monitoring -l app=prometheus
 
-# 4. Verify ML Controller
-kubectl get deployment -n kube-system ml-controller
-kubectl logs -n kube-system -l app=ml-controller
+# 4. Verify Flow Manager
+kubectl get deployment -n kube-system flow-manager
+kubectl logs -n kube-system -l app=flow-manager
 
 # 5. Verify traffic clients
 kubectl get pods -n default -l traffic-type
@@ -110,8 +110,8 @@ kubectl exec -n kube-system deployment/hubble-relay -- curl localhost:9965/metri
 PROM_POD=$(kubectl get pod -n monitoring -l app=prometheus -o jsonpath='{.items[0].metadata.name}')
 kubectl exec -n monitoring $PROM_POD -- curl localhost:9090/api/v1/query?query=up
 
-# 4. Check ML controller logs
-kubectl logs -n kube-system -l app=ml-controller | tail -20
+# 4. Check Flow manager logs
+kubectl logs -n kube-system -l app=flow-manager | tail -20
 ```
 
 ### Verify Traffic Generation
@@ -129,9 +129,9 @@ kubectl exec -n kube-system -it daemonset/cilium -c cilium-agent -- cilium statu
 
 ## 🔧 Configuration
 
-### ML Controller Configuration
+### Flow Manager Configuration
 
-Edit `deploy/kustomize/base/ml-controller-configmap.yaml`:
+Edit `deploy/kustomize/base/flow-manager-configmap.yaml`:
 
 ```yaml
 data:
@@ -145,12 +145,12 @@ data:
 ### Environment-Specific Overlays
 
 **Development** (`deploy/kustomize/overlays/dev/`):
-- 1 replica of ml-controller
+- 1 replica of flow-manager
 - Always pull images
 - Debug logging enabled
 
 **Production** (`deploy/kustomize/overlays/prod/`):
-- 3 replicas of ml-controller (HA)
+- 3 replicas of flow-manager (HA)
 - IfNotPresent image pull policy
 - Strict resource limits
 
@@ -198,21 +198,21 @@ kubectl exec -n monitoring deployment/prometheus -- \
   curl -v http://172.16.0.59:9962/metrics 2>&1 | head -20
 ```
 
-### ML Controller Not Updating Bandwidth
+### Flow Manager Not Updating Bandwidth
 
 ```bash
 # 1. Check controller logs
-kubectl logs -n kube-system deployment/ml-controller -f
+kubectl logs -n kube-system deployment/flow-manager -f
 
 # 2. Verify Prometheus connectivity
-kubectl exec -n kube-system deployment/ml-controller -- \
+kubectl exec -n kube-system deployment/flow-manager -- \
   curl http://prometheus:9090/api/v1/query?query=up
 
 # 3. Check deployment annotations
 kubectl get deployment robot-factory-application -o yaml | grep -i bandwidth
 
 # 4. Verify ConfigMap is mounted
-kubectl exec -n kube-system deployment/ml-controller -- ls -la /etc/config/
+kubectl exec -n kube-system deployment/flow-manager -- ls -la /etc/config/
 ```
 
 ## 📊 Monitoring
@@ -256,17 +256,17 @@ kubectl rollout restart daemonset/cilium -n kube-system
 kubectl rollout status daemonset/cilium -n kube-system
 ```
 
-### Update ML Controller
+### Update Flow Manager
 
 ```bash
 # Update via image tag
-kubectl set image deployment/ml-controller -n kube-system \
-  ml-controller=ml-controller:v1.1 \
+kubectl set image deployment/flow-manager -n kube-system \
+  flow-manager=flow-manager:v1.1 \
   --record
 
 # Monitor rollout
-kubectl rollout status deployment/ml-controller -n kube-system
-kubectl rollout history deployment/ml-controller -n kube-system
+kubectl rollout status deployment/flow-manager -n kube-system
+kubectl rollout history deployment/flow-manager -n kube-system
 ```
 
 ## 🗑️ Cleanup
@@ -288,7 +288,7 @@ kubectl delete -f infrastructure/policies/
 ## 📝 Next Steps
 
 1. **Configure Overlays**: Customize `deploy/kustomize/overlays/` for your environment
-2. **Set Thresholds**: Adjust ML controller parameters in ConfigMap
+2. **Set Thresholds**: Adjust Flow manager parameters in ConfigMap
 3. **Add Tests**: Add integration tests in `tests/integration/`
 4. **Monitor**: Set up Grafana dashboards for visualization
 5. **Document**: Update guides with your specific configuration

@@ -45,7 +45,7 @@ The Problem: We cannot patch CiliumNetworkPolicy bandwidth limits directly becau
 The Solution (Workaround B):
 We control bandwidth by patching the Kubernetes Deployment Annotations.
 
-Mechanism: The ML Controller patches kubernetes.io/egress-bandwidth: "50M" on the telemetry-upload deployment.
+Mechanism: The Flow Manager patches kubernetes.io/egress-bandwidth: "50M" on the telemetry-upload deployment.
 
 Result: Cilium Bandwidth Manager detects this annotation change and updates the eBPF maps in real-time without restarting the pod.
 
@@ -69,7 +69,7 @@ manifests/robot-factory-application.yaml: Deploys all 4 apps (iperf3 servers).
 
 manifests/best-effort-policy.yaml: A simple "allow" policy acting as a selector hook.
 
-scripts/ml_controller.py: The Python Controller.
+scripts/flow_manager.py: The Python Controller.
 
 Polls Prometheus for L4 Jitter.
 
@@ -77,9 +77,9 @@ Implements Asymmetric Proportional Control (Cut fast, raise slow).
 
 Patches kubernetes.io/egress-bandwidth on the target deployment.
 
-manifests/ml_controller_deployment.yaml: Deploys the python script.
+manifests/flow_manager_deployment.yaml: Deploys the python script.
 
-manifests/ml_controller_rbac.yaml: Grants permissions to patch deployments.
+manifests/flow_manager_rbac.yaml: Grants permissions to patch deployments.
 
 7. CURRENT STATUS
 
@@ -87,4 +87,4 @@ Passive Protection: PROVEN. robot-control (UDP) maintains 0% loss during congest
 
 Active Control: PROVEN. The controller successfully throttles telemetry-upload bandwidth via annotation patching when high jitter is detected (simulated).
 
-Next Task: Refine the ml_controller.py to use the L4 Jitter (IQR) logic effectively with real Prometheus data.
+Next Task: Refine the flow_manager.py to use the L4 Jitter (IQR) logic effectively with real Prometheus data.

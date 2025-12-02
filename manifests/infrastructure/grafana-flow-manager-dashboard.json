@@ -1182,7 +1182,7 @@
     "networking",
     "qos",
     "cilium",
-    "ml-controller"
+    "flow-manager"
   ],
   "templating": {
     "list": [

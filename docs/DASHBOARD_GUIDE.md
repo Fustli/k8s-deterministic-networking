@@ -272,7 +272,7 @@ This color mapping creates an **intuitive narrative**: When red goes up, blue go
 ### Issue: "No data" in all panels
 **Check:**
 ```bash
-kubectl logs -n kube-system -l app=ml-controller --tail=20
+kubectl logs -n kube-system -l app=flow-manager --tail=20
 kubectl exec -n monitoring prometheus-xxx -- wget -qO- 'http://localhost:9090/api/v1/query?query=hubble_drop_total'
 ```
 
@@ -286,14 +286,14 @@ kubectl exec -n monitoring prometheus-xxx -- wget -qO- 'http://localhost:9090/ap
 kubectl get deployment telemetry-upload-deployment -o jsonpath='{.spec.template.metadata.annotations}'
 ```
 
-**Fix:** ML controller must export `kubernetes_deployment_bandwidth_limit_mbps` metric. Add Prometheus scrape config for controller.
+**Fix:** Flow manager must export `kubernetes_deployment_bandwidth_limit_mbps` metric. Add Prometheus scrape config for controller.
 
 ---
 
 ### Issue: Dashboard shows spikes but no controller reaction
 **Check controller logs:**
 ```bash
-kubectl logs -n kube-system -l app=ml-controller | grep "Action:"
+kubectl logs -n kube-system -l app=flow-manager | grep "Action:"
 ```
 
 **Expected:** Should see `Action: CONGESTION_THROTTLE` when drops >5 p/s.

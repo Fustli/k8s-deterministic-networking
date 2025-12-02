@@ -26,8 +26,8 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 CONTROLLER_DIR="${PROJECT_ROOT}/controller"
-K8S_DIR="${PROJECT_ROOT}/k8s/applications"
-INFRA_DIR="${PROJECT_ROOT}/k8s/infrastructure"
+MANIFESTS_DIR="${PROJECT_ROOT}/manifests/control"
+INFRA_DIR="${PROJECT_ROOT}/manifests/infrastructure"
 
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
@@ -62,13 +62,13 @@ deploy_flow_manager() {
     
     # Step 2: Deploy workload applications (if not already running)
     log_info "Ensuring workload applications are deployed..."
-    kubectl apply -f "${K8S_DIR}/workload-applications.yaml" || true
-    kubectl apply -f "${K8S_DIR}/best-effort-applications.yaml" || true
-    kubectl apply -f "${K8S_DIR}/traffic-generator.yaml" || true
+    kubectl apply -f "${PROJECT_ROOT}/manifests/applications/servers/workload-applications.yaml" || true
+    kubectl apply -f "${PROJECT_ROOT}/manifests/applications/clients/best-effort-applications.yaml" || true
+    kubectl apply -f "${PROJECT_ROOT}/manifests/applications/clients/traffic-generator.yaml" || true
     
     # Step 3: Deploy the Flow Manager
     log_info "Deploying Flow Manager controller..."
-    kubectl apply -f "${K8S_DIR}/ml-controller.yaml"
+    kubectl apply -f "${MANIFESTS_DIR}/ml-controller.yaml"
     
     # Step 4: Wait for rollout
     log_info "Waiting for Flow Manager to be ready..."

@@ -5,7 +5,7 @@ This directory contains the production-grade controllers for Kubernetes determin
 ## Files
 
 - `flow_manager.py` - Production controller using active TCP/UDP probing to measure jitter and control bandwidth.
-- `ml_controller_ebpf.py` - Alternative controller using eBPF to monitor kernel-level socket statistics for TCP and UDP.
+- `flow_manager_ebpf.py` - Alternative controller using eBPF to monitor kernel-level socket statistics for TCP and UDP.
 - `bandwidth_exporter.py` - A Prometheus exporter to expose bandwidth annotations as metrics.
 
 ## Features
@@ -16,7 +16,7 @@ This directory contains the production-grade controllers for Kubernetes determin
 - **Direct Action**: Dynamically patches deployment annotations to enforce bandwidth limits in near real-time.
 - **Dual-Protocol Probing**: Uses both TCP and UDP probes to get a comprehensive view of network health.
 
-### `ml_controller_ebpf.py` (eBPF-based)
+### `flow_manager_ebpf.py` (eBPF-based)
 - **Kernel-Level Monitoring**: Uses eBPF to track TCP RTT and UDP packet timing without application-level instrumentation.
 - **Low Overhead**: Captures network statistics directly from the kernel socket layer.
 - **EWMA Smoothing**: Applies an Exponentially Weighted Moving Average to latency and jitter signals to reduce noise.
@@ -25,7 +25,7 @@ This directory contains the production-grade controllers for Kubernetes determin
 
 ```bash
 # Deploy the production controller
-kubectl apply -f ../k8s/applications/flow-manager.yaml
+kubectl apply -f ../manifests/control/flow-manager.yaml
 
 # Check controller logs
 kubectl logs -n default deployment/flow-manager -f

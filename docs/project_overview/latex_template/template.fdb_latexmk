@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1764448616.63941 "/home/ubuntu/k8s-deterministic-networking/docs/project_overview/latex_template/template.tex" "template.pdf" "template" 1764448617.24348 0
+["pdflatex"] 1764510761.47681 "/home/ubuntu/k8s-deterministic-networking/docs/project_overview/latex_template/template.tex" "template.pdf" "template" 1764510762.14607 0
   "/etc/texmf/web2c/texmf.cnf" 1764448048.86979 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/ubuntu/k8s-deterministic-networking/docs/project_overview/latex_template/template.tex" 1764260555.88176 5655 ea1e3678e79069462726f7c54b28ba5e ""
+  "/home/ubuntu/k8s-deterministic-networking/docs/project_overview/latex_template/template.tex" 1764510760.9843 11826 8adbd0d8e7492031a35947683e7b640e ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrb8r.tfm" 1136768653 1292 3059476c50a24578715759f22652f3d0 ""
@@ -10,6 +10,7 @@
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr8t.tfm" 1136768653 1384 4632f5e54900a7dadbb83f555bc61e56 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmb8r.tfm" 1136768653 4524 6bce29db5bc272ba5f332261583fee9c ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmb8t.tfm" 1136768653 6880 f19b8995b61c334d78fc734065f6b4d4 ""
+  "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmr8c.tfm" 1136768653 1352 fa28a7e6d323c65ce7d13d5342ff6be2 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmr8r.tfm" 1136768653 4408 25b74d011a4c66b7f212c0cc3c90061b ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmr8t.tfm" 1136768653 6672 e3ab9e37e925f3045c9005e6d1473d56 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmri8r.tfm" 1136768653 4640 532ca3305aad10cc01d769f3f91f1029 ""
@@ -25,6 +26,7 @@
   "/usr/share/texlive/texmf-dist/fonts/vf/adobe/courier/pcrb8t.vf" 1136768653 2184 5d20c8b00cd914e50251116c274e2d0b ""
   "/usr/share/texlive/texmf-dist/fonts/vf/adobe/courier/pcrr8t.vf" 1136768653 2184 8475af1b9cfa983db5f46f5ed4b8f9f7 ""
   "/usr/share/texlive/texmf-dist/fonts/vf/adobe/times/ptmb8t.vf" 1136768653 2340 df9c920cc5688ebbf16a93f45ce7bdd3 ""
+  "/usr/share/texlive/texmf-dist/fonts/vf/adobe/times/ptmr8c.vf" 1136768653 3556 8a9a6dcbcd146ef985683f677f4758a6 ""
   "/usr/share/texlive/texmf-dist/fonts/vf/adobe/times/ptmr8t.vf" 1136768653 2348 91706c542228501c410c266421fbe30c ""
   "/usr/share/texlive/texmf-dist/fonts/vf/adobe/times/ptmri8t.vf" 1136768653 2328 6cd7df782b09b29cfc4d93e55b6b9a59 ""
   "/usr/share/texlive/texmf-dist/fonts/vf/adobe/times/ptmro8t.vf" 1136768653 2356 c62a9e3d92ec3ebab0f81e654c0829a1 ""
@@ -81,6 +83,7 @@
   "/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd" 1137110629 798 d5895e9edc628f2be019beb2c0ec66df ""
   "/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ptm.fd" 1137110629 774 61d7da1e9f9e74989b196d147e623736 ""
   "/usr/share/texlive/texmf-dist/tex/latex/psnfss/times.sty" 1586716065 856 8e0e5c8cca7b18e0400f97f5a2b90a99 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd" 1137110629 619 96f56dc5d1ef1fe1121f1cfeec70ee0c ""
   "/usr/share/texlive/texmf-dist/tex/latex/refcount/refcount.sty" 1576624809 9878 9e94e8fa600d95f9c7731bb21dfb67a4 ""
   "/usr/share/texlive/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty" 1657483315 9714 ba3194bd52c8499b3f1e3eb91d409670 ""
   "/usr/share/texlive/texmf-dist/tex/latex/url/url.sty" 1388531844 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
@@ -89,10 +92,10 @@
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1764448523.65776 128028 f533b797fba58d231669ea19e894e23e ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1764448556 6800790 6cfe954b827d7bdb504b30227473838b ""
   "figs/bme_logo.pdf" 1764260236.60505 204651 7b6329ce4ae22d227f43ffc0242aaded ""
-  "macros.tex" 1764260236.53605 1886 48a95f74e2601b6f49c7f4341bc8760f ""
-  "template.aux" 1764448617.16977 2739 17202b1e179dc3054164d87d8c8a86b6 "pdflatex"
-  "template.out" 1764448617.17077 2046 23476fb1791c1b8c61eb43b2c1390477 "pdflatex"
-  "template.tex" 1764260555.88176 5655 ea1e3678e79069462726f7c54b28ba5e ""
+  "macros.tex" 1764508586.02922 1804 02113f97af41b9681601ea420b2ab693 ""
+  "template.aux" 1764510762.06029 3603 9d2202eeabaff912fc477f40474b6b96 "pdflatex"
+  "template.out" 1764510762.06229 2718 d80a360ccb17b645076134d17fd62b1f "pdflatex"
+  "template.tex" 1764510760.9843 11826 8adbd0d8e7492031a35947683e7b640e ""
   (generated)
   "template.aux"
   "template.log"
